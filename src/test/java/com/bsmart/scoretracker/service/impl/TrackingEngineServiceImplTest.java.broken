@@ -1,0 +1,392 @@
+package com.bsmart.scoretracker.service.impl;
+
+import com.bsmart.scoretracker.dto.MatchSnapshot;
+import com.bsmart.scoretracker.model.Competition;
+import com.bsmart.scoretracker.model.Match;
+import com.bsmart.scoretracker.model.enums.EventType;
+import com.bsmart.scoretracker.model.enums.MatchStatus;
+import com.bsmart.scoretracker.model.enums.ProviderType;
+import com.bsmart.scoretracker.repository.MatchRepository;
+import com.bsmart.scoretracker.scraper.MatchScraperProvider;
+import com.bsmart.scoretracker.scraper.ScraperProviderFactory;
+import com.bsmart.scoretracker.service.MatchEventService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class TrackingEngineServiceImplTest {
+
+    @Mock
+    private ScraperProviderFactory scraperFactory;
+
+    @Mock
+    private MatchRepository matchRepository;
+
+    @Mock
+    private MatchEventService matchEventService;
+
+    @Mock
+    private MatchScraperProvider scraperProvider;
+
+    @InjectMocks
+    private TrackingEngineServiceImpl trackingEngineService;
+
+    private Match match;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(trackingEngineService, "requiredConfirmations", 3);
+        ReflectionTestUtils.setField(trackingEngineService, "maxErrors", 5);
+
+        Competition competition = Competition.builder()
+            .id(1L)
+            .code("TEST")
+            .name("Test Competition")
+            .build();
+
+        Phase phase = Phase.builder()
+            .id(1L)
+            .competition(competition)
+            .name("Test Phase")
+            .build();
+
+        match = Match.builder()
+            .id(1L)
+            .phase(phase)
+            .homeTeam("Team A")
+            .awayTeam("Team B")
+            .provider(ProviderType.ONE_FOOTBALL)
+            .matchUrl("https://example.com/match")
+            .status(MatchStatus.SCHEDULED)
+            .trackingEnabled(true)
+            .errorCount(0)
+            .consecutiveSameCandidate(0)
+            .halfTimeSeen(false)
+            .build();
+    }
+
+    @Test
+    void testTrackMatch_Success() {
+        // Given
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("LIVE")
+            .home(1)
+            .away(0)
+            .minute("25")
+            .rawStatus("LIVE")
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then
+        assertNotNull(match.getLastFetchUtc());
+        assertEquals("LIVE", match.getRawStatus());
+        assertEquals("25", match.getMinute());
+        assertEquals(0, match.getErrorCount());
+        assertNull(match.getLastError());
+        verify(matchRepository).save(match);
+    }
+
+    @Test
+    void testTrackMatch_NotFound() {
+        // Given
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .found(false)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then
+        assertEquals(1, match.getErrorCount());
+        assertEquals("Match data not found", match.getLastError());
+        verify(matchRepository).save(match);
+    }
+
+    @Test
+    void testAntiFlapping_RequiresMultipleConfirmations() {
+        // Given
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("LIVE")
+            .home(0)
+            .away(0)
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When - First fetch
+        trackingEngineService.trackMatch(match);
+
+        // Then - Should set candidate but not change status
+        assertEquals(MatchStatus.SCHEDULED, match.getStatus());
+        assertEquals(MatchStatus.IN_PLAY, match.getStatusCandidate());
+        assertEquals(1, match.getConsecutiveSameCandidate());
+
+        // When - Second fetch with same status
+        trackingEngineService.trackMatch(match);
+
+        // Then - Should increment counter but not change status yet
+        assertEquals(MatchStatus.SCHEDULED, match.getStatus());
+        assertEquals(2, match.getConsecutiveSameCandidate());
+
+        // When - Third fetch with same status
+        trackingEngineService.trackMatch(match);
+
+        // Then - Should now change status after 3 confirmations
+        assertEquals(MatchStatus.IN_PLAY, match.getStatus());
+        assertNull(match.getStatusCandidate());
+        assertEquals(0, match.getConsecutiveSameCandidate());
+
+        // Verify STATUS_CHANGE event was created (along with ANTI_FLAPPING and SCORE_CHANGE events)
+        verify(matchEventService, atLeastOnce()).createEvent(eq(match), eq(EventType.STATUS_CHANGE),
+            eq(MatchStatus.SCHEDULED), eq(MatchStatus.IN_PLAY),
+            isNull(), isNull(), isNull(), isNull(), any(), any(), eq("SCHEDULER"));
+    }
+
+    @Test
+    void testAntiFlapping_ResetsOnDifferentCandidate() {
+        // Given
+        match.setStatusCandidate(MatchStatus.IN_PLAY);
+        match.setConsecutiveSameCandidate(2);
+
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("HT")
+            .home(1)
+            .away(1)
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then - Should reset counter and set new candidate
+        assertEquals(MatchStatus.HALF_TIME, match.getStatusCandidate());
+        assertEquals(1, match.getConsecutiveSameCandidate());
+        assertEquals(MatchStatus.SCHEDULED, match.getStatus()); // Status unchanged
+    }
+
+    @Test
+    void testStatusTransition_FinishedIsTerminal() {
+        // Given
+        match.setStatus(MatchStatus.FINISHED);
+
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("LIVE")
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then - Status should remain FINISHED
+        assertEquals(MatchStatus.FINISHED, match.getStatus());
+        assertNull(match.getStatusCandidate());
+    }
+
+    @Test
+    void testStatusTransition_ValidTransitions() {
+        // SCHEDULED -> IN_PLAY
+        assertTrue(isValidTransitionHelper(MatchStatus.SCHEDULED, MatchStatus.IN_PLAY));
+
+        // IN_PLAY -> HALF_TIME
+        assertTrue(isValidTransitionHelper(MatchStatus.IN_PLAY, MatchStatus.HALF_TIME));
+
+        // HALF_TIME -> IN_PLAY
+        assertTrue(isValidTransitionHelper(MatchStatus.HALF_TIME, MatchStatus.IN_PLAY));
+
+        // HALF_TIME -> FINISHED
+        assertTrue(isValidTransitionHelper(MatchStatus.HALF_TIME, MatchStatus.FINISHED));
+
+        // SCHEDULED -> FINISHED (tolerated: tracker started late)
+        assertTrue(isValidTransitionHelper(MatchStatus.SCHEDULED, MatchStatus.FINISHED));
+    }
+
+    @Test
+    void testScoreChange_UpdatesCorrectly() {
+        // Given
+        match.setScoreHome(0);
+        match.setScoreAway(0);
+        match.setStatus(MatchStatus.IN_PLAY); // Set status to IN_PLAY to avoid status change events
+
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("LIVE")
+            .home(1)
+            .away(0)
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then
+        assertEquals(1, match.getScoreHome());
+        assertEquals(0, match.getScoreAway());
+        verify(matchEventService, atLeastOnce()).createEvent(eq(match), eq(EventType.SCORE_CHANGE),
+            isNull(), isNull(), eq(0), eq(0), eq(1), eq(0),
+            any(), any(), eq("SCHEDULER")); // Use any() instead of anyString() to accept null values
+    }
+
+    @Test
+    void testScoreRollback_Protection() {
+        // Given
+        match.setScoreHome(2);
+        match.setScoreAway(1);
+
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("LIVE")
+            .home(1) // Rollback!
+            .away(1)
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then - Score should NOT be updated
+        assertEquals(2, match.getScoreHome());
+        assertEquals(1, match.getScoreAway());
+        verify(matchEventService, never()).createEvent(any(), eq(EventType.SCORE_CHANGE),
+            any(), any(), any(), any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    void testNormalizeStatus_OneFootball() {
+        assertEquals(MatchStatus.FINISHED,
+            trackingEngineService.normalizeStatus("FT", ProviderType.ONE_FOOTBALL));
+        assertEquals(MatchStatus.FINISHED,
+            trackingEngineService.normalizeStatus("FULL TIME", ProviderType.ONE_FOOTBALL));
+        assertEquals(MatchStatus.HALF_TIME,
+            trackingEngineService.normalizeStatus("HT", ProviderType.ONE_FOOTBALL));
+        assertEquals(MatchStatus.IN_PLAY,
+            trackingEngineService.normalizeStatus("LIVE", ProviderType.ONE_FOOTBALL));
+        assertEquals(MatchStatus.IN_PLAY,
+            trackingEngineService.normalizeStatus("45'", ProviderType.ONE_FOOTBALL));
+        assertEquals(MatchStatus.SCHEDULED,
+            trackingEngineService.normalizeStatus("SCHEDULED", ProviderType.ONE_FOOTBALL));
+    }
+
+    @Test
+    void testNormalizeStatus_LiveScore() {
+        assertEquals(MatchStatus.FINISHED,
+            trackingEngineService.normalizeStatus("FT", ProviderType.LIVE_SCORE));
+        assertEquals(MatchStatus.HALF_TIME,
+            trackingEngineService.normalizeStatus("HALFTIME", ProviderType.LIVE_SCORE));
+        assertEquals(MatchStatus.IN_PLAY,
+            trackingEngineService.normalizeStatus("LIVE", ProviderType.LIVE_SCORE));
+        assertEquals(MatchStatus.SCHEDULED,
+            trackingEngineService.normalizeStatus("NOT STARTED", ProviderType.LIVE_SCORE));
+    }
+
+    @Test
+    void testDetectHalfTime_ByMinute() {
+        // Given
+        match.setStatus(MatchStatus.IN_PLAY);
+        match.setHalfTimeSeen(false);
+
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("LIVE")
+            .home(1)
+            .away(0)
+            .minute("45")
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then
+        assertTrue(match.getHalfTimeSeen());
+        // Should suggest HALF_TIME status
+        assertEquals(MatchStatus.HALF_TIME, match.getStatusCandidate());
+    }
+
+    @Test
+    void testErrorHandling_MaxErrorsDisablesTracking() {
+        // Given
+        match.setErrorCount(4); // One more will disable
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenThrow(new RuntimeException("Network error"));
+
+        // When
+        trackingEngineService.trackMatch(match);
+
+        // Then
+        assertEquals(5, match.getErrorCount());
+        assertFalse(match.getTrackingEnabled());
+        verify(matchEventService).createEvent(eq(match), eq(EventType.ERROR_DETECTED),
+            isNull(), isNull(), isNull(), isNull(), isNull(), isNull(),
+            isNull(), anyString(), eq("SCHEDULER"));
+    }
+
+    @Test
+    void testFinishedStatus_DisablesTracking() {
+        // Given
+        match.setConsecutiveSameCandidate(3); // Ready to apply
+
+        MatchSnapshot snapshot = MatchSnapshot.builder()
+            .status("FT")
+            .home(2)
+            .away(1)
+            .found(true)
+            .build();
+
+        when(scraperFactory.getProvider(ProviderType.ONE_FOOTBALL)).thenReturn(scraperProvider);
+        when(scraperProvider.fetch(anyString())).thenReturn(snapshot);
+
+        // When - First call sets candidate
+        match.setStatusCandidate(MatchStatus.FINISHED);
+        trackingEngineService.trackMatch(match);
+
+        // Then
+        assertEquals(MatchStatus.FINISHED, match.getStatus());
+        assertFalse(match.getTrackingEnabled());
+    }
+
+    private boolean isValidTransitionHelper(MatchStatus from, MatchStatus to) {
+        // Use reflection to test the private method
+        try {
+            var method = TrackingEngineServiceImpl.class.getDeclaredMethod(
+                "isValidTransition", MatchStatus.class, MatchStatus.class);
+            method.setAccessible(true);
+            return (boolean) method.invoke(trackingEngineService, from, to);
+        } catch (Exception e) {
+            fail("Could not invoke isValidTransition method: " + e.getMessage());
+            return false;
+        }
+    }
+}

@@ -1,0 +1,313 @@
+package com.bsmart.scoretracker.service.impl;
+
+import com.bsmart.scoretracker.dto.PhaseDTO;
+import com.bsmart.scoretracker.exception.ResourceNotFoundException;
+import com.bsmart.scoretracker.model.Competition;
+import com.bsmart.scoretracker.model.Phase;
+import com.bsmart.scoretracker.repository.PhaseRepository;
+import com.bsmart.scoretracker.repository.PhaseRepository;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.time.LocalDate;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+@ExtendWith(MockitoExtension.class)
+class PhaseServiceImplTest {
+
+    @Mock
+    private PhaseRepository phaseRepository;
+
+    @Mock
+    private PhaseRepository competitionRepository;
+
+    @InjectMocks
+    private PhaseServiceImpl phaseService;
+
+    private Competition competition;
+    private Phase phase1;
+    private Phase phase2;
+
+    @BeforeEach
+    void setUp() {
+        competition = Competition.builder()
+            .id(1L)
+            .code("LIGUE1")
+            .name("Ligue 1")
+            .country("France")
+            .build();
+
+        phase1 = Phase.builder()
+            .id(1L)
+            .phase(phase)
+            .name("Journée 1")
+            .stage("REGULAR")
+            .matchDay(1)
+            .startDate(LocalDate.of(2024, 8, 1))
+            .endDate(LocalDate.of(2024, 8, 7))
+            .trackingEnabled(true)
+            .build();
+
+        phase2 = Phase.builder()
+            .id(2L)
+            .phase(phase)
+            .name("Journée 2")
+            .stage("REGULAR")
+            .matchDay(2)
+            .startDate(LocalDate.of(2024, 8, 8))
+            .endDate(LocalDate.of(2024, 8, 14))
+            .trackingEnabled(true)
+            .build();
+    }
+
+    @Test
+    void testGetAllPhases() {
+        // Given
+        when(phaseRepository.findAll()).thenReturn(Arrays.asList(phase1, phase2));
+
+        // When
+        List<PhaseDTO> result = phaseService.getAllPhases();
+
+        // Then
+        assertEquals(2, result.size());
+        assertEquals("Journée 1", result.get(0).getName());
+        assertEquals("Journée 2", result.get(1).getName());
+        verify(phaseRepository).findAll();
+    }
+
+    @Test
+    void testGetPhasesByCompetition() {
+        // Given
+        when(phaseRepository.findByCompetitionIdOrderByStartDateDesc(1L))
+            .thenReturn(Arrays.asList(phase2, phase1));
+
+        // When
+        List<PhaseDTO> result = phaseService.getPhasesByCompetition(1L);
+
+        // Then
+        assertEquals(2, result.size());
+        assertEquals("Journée 2", result.get(0).getName());
+        assertEquals("Journée 1", result.get(1).getName());
+        verify(phaseRepository).findByCompetitionIdOrderByStartDateDesc(1L);
+    }
+
+    @Test
+    void testGetPhaseById_Success() {
+        // Given
+        when(phaseRepository.findById(1L)).thenReturn(Optional.of(phase1));
+
+        // When
+        PhaseDTO result = phaseService.getPhaseById(1L);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(1L, result.getId());
+        assertEquals("Journée 1", result.getName());
+        assertEquals("REGULAR", result.getStage());
+        assertEquals(1, result.getMatchDay());
+        assertEquals(1L, result.getCompetitionId());
+        assertEquals("Ligue 1", result.getCompetitionName());
+        verify(phaseRepository).findById(1L);
+    }
+
+    @Test
+    void testGetPhaseById_NotFound() {
+        // Given
+        when(phaseRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+            () -> phaseService.getPhaseById(999L));
+        verify(phaseRepository).findById(999L);
+    }
+
+    @Test
+    void testCreatePhase_Success() {
+        // Given
+        PhaseDTO dto = PhaseDTO.builder()
+            .phaseId(1L)
+            .name("Journée 3")
+            .stage("REGULAR")
+            .matchDay(3)
+            .startDate(LocalDate.of(2024, 8, 15))
+            .endDate(LocalDate.of(2024, 8, 21))
+            .trackingEnabled(true)
+            .build();
+
+        Phase newPhase = Phase.builder()
+            .id(3L)
+            .phase(phase)
+            .name("Journée 3")
+            .stage("REGULAR")
+            .matchDay(3)
+            .startDate(dto.getStartDate())
+            .endDate(dto.getEndDate())
+            .trackingEnabled(true)
+            .build();
+
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(phaseRepository.save(any(Phase.class))).thenReturn(newPhase);
+
+        // When
+        PhaseDTO result = phaseService.createPhase(dto);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(3L, result.getId());
+        assertEquals("Journée 3", result.getName());
+        assertEquals(3, result.getMatchDay());
+        verify(competitionRepository).findById(1L);
+        verify(phaseRepository).save(any(Phase.class));
+    }
+
+    @Test
+    void testCreatePhase_CompetitionNotFound() {
+        // Given
+        PhaseDTO dto = PhaseDTO.builder()
+            .phaseId(999L)
+            .name("Journée 3")
+            .build();
+
+        when(competitionRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+            () -> phaseService.createPhase(dto));
+        verify(competitionRepository).findById(999L);
+        verify(phaseRepository, never()).save(any());
+    }
+
+    @Test
+    void testCreatePhase_DefaultTrackingEnabled() {
+        // Given - DTO without trackingEnabled
+        PhaseDTO dto = PhaseDTO.builder()
+            .phaseId(1L)
+            .name("Journée 3")
+            .stage("REGULAR")
+            .matchDay(3)
+            .startDate(LocalDate.of(2024, 8, 15))
+            .endDate(LocalDate.of(2024, 8, 21))
+            .build();
+
+        when(competitionRepository.findById(1L)).thenReturn(Optional.of(competition));
+        when(phaseRepository.save(any(Phase.class))).thenAnswer(invocation -> {
+            Phase p = invocation.getArgument(0);
+            assertTrue(p.getTrackingEnabled());
+            return p;
+        });
+
+        // When
+        phaseService.createPhase(dto);
+
+        // Then
+        verify(phaseRepository).save(argThat(phase -> phase.getTrackingEnabled() == true));
+    }
+
+    @Test
+    void testUpdatePhase_Success() {
+        // Given
+        PhaseDTO dto = PhaseDTO.builder()
+            .phaseId(1L)
+            .name("Journée 1 Updated")
+            .stage("PLAYOFF")
+            .matchDay(10)
+            .startDate(LocalDate.of(2024, 9, 1))
+            .endDate(LocalDate.of(2024, 9, 7))
+            .trackingEnabled(false)
+            .build();
+
+        when(phaseRepository.findById(1L)).thenReturn(Optional.of(phase1));
+        when(phaseRepository.save(any(Phase.class))).thenReturn(phase1);
+
+        // When
+        PhaseDTO result = phaseService.updatePhase(1L, dto);
+
+        // Then
+        assertEquals("Journée 1 Updated", phase1.getName());
+        assertEquals("PLAYOFF", phase1.getStage());
+        assertEquals(10, phase1.getMatchDay());
+        assertFalse(phase1.getTrackingEnabled());
+        verify(phaseRepository).findById(1L);
+        verify(phaseRepository).save(phase1);
+    }
+
+    @Test
+    void testUpdatePhase_ChangeCompetition() {
+        // Given
+        Phase newPhase = Competition.builder()
+            .id(2L)
+            .code("LALIGA")
+            .name("La Liga")
+            .country("Spain")
+            .build();
+
+        PhaseDTO dto = PhaseDTO.builder()
+            .phaseId(2L)
+            .name("Jornada 1")
+            .stage("REGULAR")
+            .matchDay(1)
+            .startDate(phase1.getStartDate())
+            .endDate(phase1.getEndDate())
+            .trackingEnabled(true)
+            .build();
+
+        when(phaseRepository.findById(1L)).thenReturn(Optional.of(phase1));
+        when(competitionRepository.findById(2L)).thenReturn(Optional.of(newPhase));
+        when(phaseRepository.save(any(Phase.class))).thenReturn(phase1);
+
+        // When
+        phaseService.updatePhase(1L, dto);
+
+        // Then
+        assertEquals(newPhase, phase1.getPhase());
+        verify(competitionRepository).findById(2L);
+    }
+
+    @Test
+    void testUpdatePhase_NotFound() {
+        // Given
+        PhaseDTO dto = PhaseDTO.builder().build();
+        when(phaseRepository.findById(999L)).thenReturn(Optional.empty());
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+            () -> phaseService.updatePhase(999L, dto));
+        verify(phaseRepository).findById(999L);
+        verify(phaseRepository, never()).save(any());
+    }
+
+    @Test
+    void testDeletePhase_Success() {
+        // Given
+        when(phaseRepository.existsById(1L)).thenReturn(true);
+
+        // When
+        phaseService.deletePhase(1L);
+
+        // Then
+        verify(phaseRepository).existsById(1L);
+        verify(phaseRepository).deleteById(1L);
+    }
+
+    @Test
+    void testDeletePhase_NotFound() {
+        // Given
+        when(phaseRepository.existsById(999L)).thenReturn(false);
+
+        // When & Then
+        assertThrows(ResourceNotFoundException.class,
+            () -> phaseService.deletePhase(999L));
+        verify(phaseRepository).existsById(999L);
+        verify(phaseRepository, never()).deleteById(anyLong());
+    }
+}

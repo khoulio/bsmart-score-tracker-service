@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Synchronisation des Compétitions</title>
+</head>
+<body>
+    <div th:replace="~{layout/base :: html(
+        pageTitle='Synchronisation des Compétitions',
+        content=~{::main-content}
+    )}">
+        <div th:fragment="main-content">
+            <!-- Header Actions -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-cloud-download text-primary"></i>
+                                        Synchronisation avec WECANPRONO-SERVICE
+                                    </h5>
+                                    <small class="text-muted">
+                                        Gateway: <code>http://localhost:8222</code> |
+                                        Endpoint: <code>/WECANPRONO-SERVICE/api/competitions</code>
+                                    </small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <form th:action="@{/admin/sync/competitions/sync-all}" method="post" style="display:inline;">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                            Synchroniser Maintenant
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-database text-info" style="font-size: 3rem;"></i>
+                            <h3 class="mt-3" th:text="${localCompetitions.size()}">0</h3>
+                            <p class="text-muted mb-0">Compétitions Locales</p>
+                            <small class="text-muted">Dans la base de données</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cloud text-primary" style="font-size: 3rem;"></i>
+                            <h3 class="mt-3" th:text="${externalCount}">0</h3>
+                            <p class="text-muted mb-0">Compétitions Externes</p>
+                            <small class="text-muted">Disponibles sur WECANPRONO</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- External Competitions List -->
+            <div class="row" th:if="${externalCompetitions != null and !externalCompetitions.empty}">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-cloud-download-fill me-2"></i>
+                            Compétitions Disponibles sur WECANPRONO-SERVICE
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nom</th>
+                                            <th>Slug</th>
+                                            <th class="text-center">Type</th>
+                                            <th class="text-center">Statut</th>
+                                            <th class="text-center">Utilisateurs</th>
+                                            <th>Début</th>
+                                            <th class="text-center">Logo</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="comp : ${externalCompetitions}">
+                                            <td>
+                                                <span class="badge bg-secondary" th:text="${comp.id}">1</span>
+                                            </td>
+                                            <td>
+                                                <strong th:text="${comp.name}">Competition Name</strong>
+                                                <span th:if="${comp.isFeaturedCompetition}" class="badge bg-warning ms-2">
+                                                    <i class="bi bi-star-fill"></i> Vedette
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <code th:text="${comp.slug}">PL</code>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${comp.isLeague}" class="badge bg-info">Ligue</span>
+                                                <span th:unless="${comp.isLeague}" class="badge bg-success">Tournoi</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${comp.isStarted}" class="badge bg-success">
+                                                    <i class="bi bi-play-fill"></i> Démarrée
+                                                </span>
+                                                <span th:unless="${comp.isStarted}" class="badge bg-secondary">
+                                                    <i class="bi bi-clock"></i> Programmée
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span class="badge bg-primary" th:if="${comp.nbUsers}" th:text="${comp.nbUsers}">0</span>
+                                                <span class="text-muted" th:unless="${comp.nbUsers}">-</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted" th:text="${comp.dateStart}">2024-01-01</small>
+                                            </td>
+                                            <td class="text-center">
+                                                <img th:if="${comp.url}" th:src="${comp.url}" alt="Logo"
+                                                     style="max-height: 30px; max-width: 30px;" class="rounded"
+                                                     onerror="this.style.display='none'">
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Local Competitions List -->
+            <div class="row mt-4" th:if="${localCompetitions != null and !localCompetitions.empty}">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-database-fill me-2"></i>
+                            Compétitions Synchronisées (Base Locale)
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>ID Local</th>
+                                            <th>Nom</th>
+                                            <th>Code</th>
+                                            <th>ID Externe</th>
+                                            <th>Dernière Synchro</th>
+                                            <th class="text-center">Phases</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="comp : ${localCompetitions}">
+                                            <td>
+                                                <span class="badge bg-dark" th:text="${comp.id}">1</span>
+                                            </td>
+                                            <td>
+                                                <strong th:text="${comp.name}">Competition Name</strong>
+                                            </td>
+                                            <td>
+                                                <code th:text="${comp.code}">CODE</code>
+                                            </td>
+                                            <td>
+                                                <span th:if="${comp.externalId}" class="badge bg-info" th:text="${comp.externalId}">0</span>
+                                                <span th:unless="${comp.externalId}" class="text-muted">-</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <span th:if="${comp.lastSyncAt}" th:text="${#temporals.format(comp.lastSyncAt, 'dd/MM/yyyy HH:mm')}">-</span>
+                                                    <span th:unless="${comp.lastSyncAt}">Jamais synchronisée</span>
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                <a th:href="@{/admin/phases(competitionId=${comp.id})}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="bi bi-calendar3"></i> Phases
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card bg-info bg-opacity-10 border-info">
+                        <div class="card-body">
+                            <h6 class="text-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                Comment ça fonctionne ?
+                            </h6>
+                            <ul class="mb-0">
+                                <li>La synchronisation récupère les compétitions depuis <strong>WECANPRONO-SERVICE</strong> via le gateway</li>
+                                <li>Les compétitions sont créées/mises à jour dans la base locale</li>
+                                <li>Un scheduler automatique synchronise toutes les <strong>6 heures</strong> (configurable)</li>
+                                <li>Vous pouvez déclencher une synchronisation manuelle avec le bouton ci-dessus</li>
+                                <li>Les compétitions synchronisées sont ensuite disponibles pour créer des phases et des matches</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

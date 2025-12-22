@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Phases</title>
+</head>
+<body>
+    <div th:replace="~{layout/base :: html(
+        pageTitle='Phases',
+        content=~{::main-content}
+    )}">
+        <div th:fragment="main-content">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/admin/competitions}">Compétitions</a></li>
+                    <li class="breadcrumb-item active" th:if="${competition != null}" th:text="${competition.name}">Competition</li>
+                    <li class="breadcrumb-item active">Phases</li>
+                </ol>
+            </nav>
+
+            <!-- Competition Header (if filtered) -->
+            <div class="row mb-4" th:if="${competition != null}">
+                <div class="col-md-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-trophy text-warning"></i>
+                                        <span th:text="${competition.name}">Competition Name</span>
+                                    </h5>
+                                    <small class="text-muted">
+                                        Code: <code th:text="${competition.code}">CODE</code>
+                                    </small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <a th:href="@{/admin/phases/create(competitionId=${competitionId})}"
+                                       class="btn btn-primary btn-lg">
+                                        <i class="bi bi-plus-circle"></i>
+                                        Nouvelle Phase
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row g-4 mb-4" th:if="${phases != null}">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar3 text-primary" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${phases.size()}">0</h3>
+                            <p class="text-muted mb-0">Total Phases</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-play-circle text-success" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${#lists.size(phases.?[trackingEnabled == true])}">0</h3>
+                            <p class="text-muted mb-0">Tracking Activé</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cloud-check text-info" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${#lists.size(phases.?[externalId != null])}">0</h3>
+                            <p class="text-muted mb-0">Synchronisées</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-pencil-square text-warning" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${#lists.size(phases.?[externalId == null])}">0</h3>
+                            <p class="text-muted mb-0">Créées Manuellement</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phases Table -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-calendar3-fill me-2"></i>
+                            Liste des Phases
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${phases == null || phases.empty}" class="text-center p-5">
+                                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3 mb-0">Aucune phase trouvée</p>
+                                <a th:if="${competitionId != null}"
+                                   th:href="@{/admin/phases/create(competitionId=${competitionId})}"
+                                   class="btn btn-primary mt-3">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Créer la première phase
+                                </a>
+                            </div>
+
+                            <div th:if="${phases != null && !phases.empty}" class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nom</th>
+                                            <th>Stage</th>
+                                            <th class="text-center">Journée</th>
+                                            <th>Période</th>
+                                            <th class="text-center">Tracking</th>
+                                            <th class="text-center">Source</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="phase : ${phases}">
+                                            <td>
+                                                <strong th:text="${phase.name}">Phase Name</strong>
+                                            </td>
+                                            <td>
+                                                <span th:if="${phase.stage}" th:text="${phase.stage}">Stage</span>
+                                                <span th:unless="${phase.stage}" class="text-muted">-</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${phase.matchDay}" class="badge bg-secondary" th:text="'J' + ${phase.matchDay}">J1</span>
+                                                <span th:unless="${phase.matchDay}" class="text-muted">-</span>
+                                            </td>
+                                            <td>
+                                                <small class="text-muted">
+                                                    <span th:if="${phase.startDate}" th:text="${#temporals.format(phase.startDate, 'dd/MM/yyyy')}">01/01/2024</span>
+                                                    <span th:unless="${phase.startDate}">-</span>
+                                                    <span th:if="${phase.endDate}">→ <span th:text="${#temporals.format(phase.endDate, 'dd/MM/yyyy')}">31/12/2024</span></span>
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                <form th:action="@{/admin/phases/{id}/toggle-tracking(id=${phase.id})}"
+                                                      method="post" style="display:inline;">
+                                                    <input type="hidden" name="competitionId" th:value="${competitionId}">
+                                                    <button type="submit" class="btn btn-sm" th:classappend="${phase.trackingEnabled ? 'btn-success' : 'btn-secondary'}">
+                                                        <i th:class="${phase.trackingEnabled ? 'bi bi-toggle-on' : 'bi bi-toggle-off'}"></i>
+                                                        <span th:text="${phase.trackingEnabled ? 'ON' : 'OFF'}">ON</span>
+                                                    </button>
+                                                </form>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${phase.externalId}" class="badge bg-success">
+                                                    <i class="bi bi-cloud-check"></i> Sync
+                                                </span>
+                                                <span th:unless="${phase.externalId}" class="badge bg-info">
+                                                    <i class="bi bi-pencil"></i> Manuel
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a th:href="@{/admin/matches(phaseId=${phase.id})}"
+                                                       class="btn btn-outline-primary"
+                                                       title="Gérer les matches">
+                                                        <i class="bi bi-flag-fill"></i>
+                                                    </a>
+                                                    <a th:href="@{/admin/phases/{id}/edit(id=${phase.id}, competitionId=${competitionId})}"
+                                                       class="btn btn-outline-warning"
+                                                       title="Modifier">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger"
+                                                            data-bs-toggle="modal"
+                                                            th:data-bs-target="'#deleteModal' + ${phase.id}"
+                                                            title="Supprimer">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Delete Modal -->
+                                                <div class="modal fade" th:id="'deleteModal' + ${phase.id}" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Confirmer la suppression</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p>Êtes-vous sûr de vouloir supprimer la phase :</p>
+                                                                <p><strong th:text="${phase.name}">Phase Name</strong></p>
+                                                                <div class="alert alert-warning">
+                                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                                    Tous les matches de cette phase seront également supprimés.
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                                <form th:action="@{/admin/phases/{id}/delete(id=${phase.id})}"
+                                                                      method="post" style="display:inline;">
+                                                                    <input type="hidden" name="competitionId" th:value="${competitionId}">
+                                                                    <button type="submit" class="btn btn-danger">
+                                                                        <i class="bi bi-trash"></i> Supprimer
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card bg-info bg-opacity-10 border-info">
+                        <div class="card-body">
+                            <h6 class="text-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                Gestion des Phases
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Les phases permettent d'organiser les matches d'une compétition (journées, tours, etc.)</li>
+                                <li>Vous pouvez créer des phases <strong>manuellement</strong> ou les synchroniser depuis WECANPRONO</li>
+                                <li>Le <strong>tracking</strong> peut être activé/désactivé pour chaque phase individuellement</li>
+                                <li>Cliquez sur <i class="bi bi-flag-fill"></i> pour gérer les <strong>matches</strong> d'une phase</li>
+                                <li>La suppression d'une phase supprime également tous ses matches</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

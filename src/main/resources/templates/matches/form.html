@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Match - Formulaire</title></head>
+<body>
+<div th:replace="~{layout/base :: html(pageTitle=${isEdit ? 'Modifier Match' : 'Nouveau Match'}, content=~{::main-content})}">
+<div th:fragment="main-content">
+<div class="row">
+<div class="col-md-8 offset-md-2">
+<div class="card">
+<div class="card-header"><i class="bi bi-flag me-2"></i><span th:text="${isEdit ? 'Modifier Match' : 'Nouveau Match'}">Nouveau Match</span></div>
+<div class="card-body">
+<form th:action="${isEdit ? '/admin/matches/' + match.id + '/edit?phaseId=' + phaseId : '/admin/matches/create?phaseId=' + phaseId}" th:object="${match}" method="post">
+
+<div class="mb-3">
+<label for="externalId" class="form-label">ID Externe (rencontre_id WECANPRONO)</label>
+<input type="number" class="form-control" id="externalId" th:field="*{externalId}" placeholder="Ex: 2574597">
+<small class="text-muted">Identifiant de la rencontre dans WECANPRONO (optionnel, rempli automatiquement lors de la synchro)</small>
+</div>
+
+<div class="row">
+<div class="col-md-6 mb-3">
+<label for="homeTeam" class="form-label">Équipe Domicile <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="homeTeam" th:field="*{homeTeam}" placeholder="Ex: PSG, Real Madrid" maxlength="200" required>
+</div>
+<div class="col-md-6 mb-3">
+<label for="awayTeam" class="form-label">Équipe Extérieur <span class="text-danger">*</span></label>
+<input type="text" class="form-control" id="awayTeam" th:field="*{awayTeam}" placeholder="Ex: Barcelona, Liverpool" maxlength="200" required>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-6 mb-3">
+<label for="kickoffUtc" class="form-label">Date & Heure (UTC) <span class="text-danger">*</span></label>
+<input type="datetime-local" class="form-control" id="kickoffUtc" th:field="*{kickoffUtc}" required>
+</div>
+<div class="col-md-6 mb-3">
+<label for="provider" class="form-label">Provider <span class="text-danger">*</span></label>
+<select class="form-select" id="provider" th:field="*{provider}" required>
+<option value="ONE_FOOTBALL">OneFootball</option>
+<option value="LIVE_SCORE">LiveScore</option>
+</select>
+</div>
+</div>
+
+<div class="mb-3">
+<label for="matchUrl" class="form-label">URL de Scraping <span class="text-danger">*</span></label>
+<div class="input-group">
+<input type="url" class="form-control" id="matchUrl" th:field="*{matchUrl}" placeholder="https://onefootball.com/..." maxlength="500" required>
+<button type="button" class="btn btn-outline-primary" id="extractMetadataBtn" onclick="extractMatchMetadata()">
+<span id="extractBtnText"><i class="bi bi-download"></i> Extraire les données</span>
+<span id="extractBtnSpinner" class="d-none"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Extraction...</span>
+</button>
+</div>
+<small class="text-muted">Collez l'URL OneFootball ou LiveScore puis cliquez sur "Extraire les données" pour remplir automatiquement le formulaire (le provider sera détecté automatiquement)</small>
+<div id="extractError" class="alert alert-danger mt-2 d-none" role="alert"></div>
+<div id="extractSuccess" class="alert alert-success mt-2 d-none" role="alert"></div>
+</div>
+
+<div class="mb-3">
+<div class="form-check form-switch">
+<input class="form-check-input" type="checkbox" id="trackingEnabled" th:field="*{trackingEnabled}">
+<label class="form-check-label" for="trackingEnabled"><strong>Activer le tracking</strong></label>
+</div>
+<small class="text-muted">Active le tracking automatique des scores</small>
+</div>
+
+<div class="d-flex justify-content-between mt-4">
+<a th:href="@{/admin/matches(phaseId=${phaseId})}" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Annuler</a>
+<button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> <span th:text="${isEdit ? 'Mettre à jour' : 'Créer'}">Créer</span></button>
+</div>
+</form>
+</div>
+</div>
+
+<div class="card mt-3 bg-light">
+<div class="card-body">
+<h6><i class="bi bi-lightbulb text-warning me-2"></i>Conseils</h6>
+<ul class="mb-0 small">
+<li><strong>URL :</strong> L'URL doit pointer vers la page exacte du match sur OneFootball ou LiveScore</li>
+<li><strong>Tracking :</strong> Désactivez le tracking jusqu'à ce que vous ayez testé l'URL</li>
+<li><strong>Provider :</strong> Choisissez le provider correspondant à l'URL fournie</li>
+</ul>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<script>
+function extractMatchMetadata() {
+    const urlInput = document.getElementById('matchUrl');
+    const url = urlInput.value.trim();
+
+    // Validate URL
+    if (!url) {
+        showExtractError('Veuillez saisir une URL de match');
+        return;
+    }
+
+    if (!url.includes('onefootball.com') && !url.includes('livescore.com')) {
+        showExtractError('L\'URL doit être une URL OneFootball ou LiveScore valide');
+        return;
+    }
+
+    // Show loading state
+    const btn = document.getElementById('extractMetadataBtn');
+    const btnText = document.getElementById('extractBtnText');
+    const btnSpinner = document.getElementById('extractBtnSpinner');
+
+    btn.disabled = true;
+    btnText.classList.add('d-none');
+    btnSpinner.classList.remove('d-none');
+    hideExtractMessages();
+
+    // Call API
+    fetch('/admin/matches/extract-metadata?url=' + encodeURIComponent(url), {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Erreur lors de l\'extraction des métadonnées');
+        }
+        return response.json();
+    })
+    .then(data => {
+        // Fill form fields
+        if (data.homeTeam) {
+            document.getElementById('homeTeam').value = data.homeTeam;
+        }
+        if (data.awayTeam) {
+            document.getElementById('awayTeam').value = data.awayTeam;
+        }
+        if (data.kickoffUtc) {
+            // Convert ISO datetime to datetime-local format (YYYY-MM-DDTHH:mm)
+            const dateStr = data.kickoffUtc.substring(0, 16);
+            document.getElementById('kickoffUtc').value = dateStr;
+        }
+        if (data.provider) {
+            // Auto-select provider
+            document.getElementById('provider').value = data.provider;
+        }
+
+        // Show success message with provider info
+        const providerName = data.provider === 'ONE_FOOTBALL' ? 'OneFootball' : 'LiveScore';
+        showExtractSuccess('Données extraites avec succès de ' + providerName + ' ! Vérifiez et corrigez si nécessaire avant de créer le match.');
+
+        // Reset button state
+        btn.disabled = false;
+        btnText.classList.remove('d-none');
+        btnSpinner.classList.add('d-none');
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showExtractError('Erreur lors de l\'extraction : ' + error.message + '. Assurez-vous que l\'URL est valide et que le service est en cours d\'exécution.');
+
+        // Reset button state
+        btn.disabled = false;
+        btnText.classList.remove('d-none');
+        btnSpinner.classList.add('d-none');
+    });
+}
+
+function showExtractError(message) {
+    const errorDiv = document.getElementById('extractError');
+    errorDiv.textContent = message;
+    errorDiv.classList.remove('d-none');
+
+    const successDiv = document.getElementById('extractSuccess');
+    successDiv.classList.add('d-none');
+}
+
+function showExtractSuccess(message) {
+    const successDiv = document.getElementById('extractSuccess');
+    successDiv.textContent = message;
+    successDiv.classList.remove('d-none');
+
+    const errorDiv = document.getElementById('extractError');
+    errorDiv.classList.add('d-none');
+}
+
+function hideExtractMessages() {
+    document.getElementById('extractError').classList.add('d-none');
+    document.getElementById('extractSuccess').classList.add('d-none');
+}
+</script>
+
+</body>
+</html>

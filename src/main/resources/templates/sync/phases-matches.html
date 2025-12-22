@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Synchronisation Phases & Matches</title>
+</head>
+<body>
+    <div th:replace="~{layout/base :: html(
+        pageTitle='Synchronisation Phases & Matches',
+        content=~{::main-content}
+    )}">
+        <div th:fragment="main-content">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/admin/competitions}">Compétitions</a></li>
+                    <li class="breadcrumb-item active">Sync Phases & Matches</li>
+                </ol>
+            </nav>
+
+            <!-- Competition Info Card -->
+            <div class="row mb-4" th:if="${competition != null}">
+                <div class="col-md-12">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-0">
+                                        <i class="bi bi-trophy text-warning"></i>
+                                        <span th:text="${competition.name}">Competition Name</span>
+                                    </h5>
+                                    <small class="text-muted">
+                                        Code: <code th:text="${competition.code}">CODE</code> |
+                                        External ID: <code th:text="${competition.externalId}">ID</code>
+                                    </small>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <form th:action="@{/admin/sync/phases-matches/sync-all}" method="post" style="display:inline;">
+                                        <input type="hidden" name="competitionId" th:value="${competitionId}">
+                                        <button type="submit" class="btn btn-primary btn-lg">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                            Synchroniser Tout
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar3 text-info" style="font-size: 3rem;"></i>
+                            <h3 class="mt-3" th:text="${externalPhases != null ? externalPhases.size() : 0}">0</h3>
+                            <p class="text-muted mb-0">Phases Disponibles</p>
+                            <small class="text-muted">Sur WECANPRONO</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-flag-fill text-primary" style="font-size: 3rem;"></i>
+                            <h3 class="mt-3" th:text="${totalExternalMatches != null ? totalExternalMatches : 0}">0</h3>
+                            <p class="text-muted mb-0">Matches Disponibles</p>
+                            <small class="text-muted">Au total</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-clock-history text-success" style="font-size: 3rem;"></i>
+                            <h3 class="mt-3">
+                                <small th:if="${competition != null && competition.lastSyncAt != null}"
+                                       th:text="${#temporals.format(competition.lastSyncAt, 'dd/MM/yyyy HH:mm')}">
+                                    -
+                                </small>
+                                <small th:unless="${competition != null && competition.lastSyncAt != null}">
+                                    Jamais
+                                </small>
+                            </h3>
+                            <p class="text-muted mb-0">Dernière Synchro</p>
+                            <small class="text-muted">Compétition</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Phases List -->
+            <div class="row" th:if="${externalPhases != null && !externalPhases.empty}">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-cloud-download me-2"></i>
+                            Phases et Matches Disponibles
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="accordion" id="phasesAccordion">
+                                <div class="accordion-item" th:each="phase, iterStat : ${externalPhases}">
+                                    <h2 class="accordion-header" th:id="'heading' + ${iterStat.index}">
+                                        <button class="accordion-button collapsed" type="button"
+                                                data-bs-toggle="collapse"
+                                                th:data-bs-target="'#collapse' + ${iterStat.index}"
+                                                aria-expanded="false"
+                                                th:aria-controls="'collapse' + ${iterStat.index}">
+                                            <div class="w-100 d-flex justify-content-between align-items-center pe-3">
+                                                <div>
+                                                    <strong th:text="${phase.name}">Phase Name</strong>
+                                                    <span class="badge bg-secondary ms-2" th:text="'ID: ' + ${phase.id}">ID: 1</span>
+                                                    <span th:if="${phase.isStarted}" class="badge bg-success ms-1">
+                                                        <i class="bi bi-play-fill"></i> Démarrée
+                                                    </span>
+                                                    <span th:unless="${phase.isStarted}" class="badge bg-secondary ms-1">
+                                                        <i class="bi bi-clock"></i> Programmée
+                                                    </span>
+                                                </div>
+                                                <div>
+                                                    <span class="badge bg-primary" th:text="${phase.rencontres != null ? phase.rencontres.size() : 0} + ' matches'">0 matches</span>
+                                                </div>
+                                            </div>
+                                        </button>
+                                    </h2>
+                                    <div th:id="'collapse' + ${iterStat.index}"
+                                         class="accordion-collapse collapse"
+                                         th:aria-labelledby="'heading' + ${iterStat.index}"
+                                         data-bs-parent="#phasesAccordion">
+                                        <div class="accordion-body">
+                                            <!-- Phase Details -->
+                                            <div class="row mb-3">
+                                                <div class="col-md-12">
+                                                    <div class="alert alert-info">
+                                                        <strong>Informations de la Phase:</strong><br>
+                                                        <small>
+                                                            Prolongations: <span th:text="${phase.isProlongationEnabled ? 'Oui' : 'Non'}">Non</span> |
+                                                            Monétisée: <span th:text="${phase.isMonetized ? 'Oui' : 'Non'}">Non</span> |
+                                                            Multiplicateur: <span th:text="${phase.multiply}">1</span>x
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <!-- Matches Table -->
+                                            <div th:if="${phase.rencontres != null && !phase.rencontres.empty}">
+                                                <h6 class="mb-3"><i class="bi bi-flag-fill me-2"></i>Matches de cette phase</h6>
+                                                <div class="table-responsive">
+                                                    <table class="table table-sm table-hover">
+                                                        <thead class="table-light">
+                                                            <tr>
+                                                                <th>ID</th>
+                                                                <th>Match</th>
+                                                                <th class="text-center">Score</th>
+                                                                <th>Date</th>
+                                                                <th class="text-center">Statut</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr th:each="match : ${phase.rencontres}">
+                                                                <td><code th:text="${match.id}">ID</code></td>
+                                                                <td>
+                                                                    <span th:if="${match.teamDomicile != null}" th:text="${match.teamDomicile.clearName}">Home</span>
+                                                                    <span th:unless="${match.teamDomicile != null}">Team <span th:text="${match.teamDomicileId}">?</span></span>
+                                                                    <strong class="mx-2">vs</strong>
+                                                                    <span th:if="${match.teamExterieur != null}" th:text="${match.teamExterieur.clearName}">Away</span>
+                                                                    <span th:unless="${match.teamExterieur != null}">Team <span th:text="${match.teamExterieurId}">?</span></span>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span th:if="${match.scoreTeamDomicile != null && match.scoreTeamExterieur != null}"
+                                                                          class="badge bg-dark">
+                                                                        <span th:text="${match.scoreTeamDomicile}">0</span> - <span th:text="${match.scoreTeamExterieur}">0</span>
+                                                                    </span>
+                                                                    <span th:unless="${match.scoreTeamDomicile != null && match.scoreTeamExterieur != null}" class="text-muted">-</span>
+                                                                </td>
+                                                                <td>
+                                                                    <small class="text-muted" th:text="${match.date != null ? match.date : '-'}">Date</small>
+                                                                </td>
+                                                                <td class="text-center">
+                                                                    <span th:if="${match.status == 'FINISHED'}" class="badge bg-success">
+                                                                        <i class="bi bi-check-circle"></i> Terminé
+                                                                    </span>
+                                                                    <span th:if="${match.status == 'IN_PLAY'}" class="badge bg-danger">
+                                                                        <i class="bi bi-broadcast"></i> En cours
+                                                                    </span>
+                                                                    <span th:if="${match.status != 'FINISHED' && match.status != 'IN_PLAY'}" class="badge bg-secondary">
+                                                                        <i class="bi bi-clock"></i> <span th:text="${match.status}">SCHEDULED</span>
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Empty State -->
+            <div class="row" th:if="${externalPhases == null || externalPhases.empty}">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-body text-center p-5">
+                            <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">Aucune phase disponible pour cette compétition sur WECANPRONO-SERVICE</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card bg-info bg-opacity-10 border-info">
+                        <div class="card-body">
+                            <h6 class="text-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                Synchronisation Phases & Matches
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Les phases sont récupérées depuis <strong>WECANPRONO-SERVICE</strong> avec tous leurs matches</li>
+                                <li>Chaque phase contient la liste complète des matches avec équipes, scores et statuts</li>
+                                <li>La synchronisation crée ou met à jour les phases et matches dans la base locale</li>
+                                <li>Les matches synchronisés ont le tracking <strong>désactivé par défaut</strong> - vous devez configurer l'URL de scraping</li>
+                                <li>Un scheduler automatique synchronise toutes les <strong>12 heures</strong> (configurable)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

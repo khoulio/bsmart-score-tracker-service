@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Phase - Formulaire</title>
+</head>
+<body>
+    <div th:replace="~{layout/base :: html(
+        pageTitle=${isEdit ? 'Modifier Phase' : 'Nouvelle Phase'},
+        content=~{::main-content}
+    )}">
+        <div th:fragment="main-content">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/admin/competitions}">Compétitions</a></li>
+                    <li class="breadcrumb-item" th:if="${competition != null}">
+                        <a th:href="@{/admin/phases(competitionId=${competitionId})}" th:text="${competition.name}">Competition</a>
+                    </li>
+                    <li class="breadcrumb-item active" th:text="${isEdit ? 'Modifier' : 'Créer'}">Créer</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-calendar3 me-2"></i>
+                            <span th:text="${isEdit ? 'Modifier la Phase' : 'Nouvelle Phase'}">Nouvelle Phase</span>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="${isEdit ? '/admin/phases/' + phase.id + '/edit?competitionId=' + competitionId : '/admin/phases/create?competitionId=' + competitionId}"
+                                  th:object="${phase}"
+                                  method="post">
+
+                                <!-- Name -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        Nom de la Phase <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="name"
+                                           th:field="*{name}"
+                                           th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                           placeholder="Ex: 1ère journée, Quarts de finale, Groupe A"
+                                           maxlength="200"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
+                                        Erreur sur le nom
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Nom descriptif de la phase (max 200 caractères)
+                                    </small>
+                                </div>
+
+                                <div class="row">
+                                    <!-- Stage -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="stage" class="form-label">
+                                            Stage
+                                            <i class="bi bi-info-circle text-muted"
+                                               title="Type de phase (Groupe, Knockout, etc.)"
+                                               data-bs-toggle="tooltip"></i>
+                                        </label>
+                                        <select class="form-select" id="stage" th:field="*{stage}">
+                                            <option value="">-- Sélectionner --</option>
+                                            <option value="Regular Season">Saison Régulière</option>
+                                            <option value="Group Stage">Phase de Groupes</option>
+                                            <option value="Knockout">Phase à Élimination</option>
+                                            <option value="Round of 16">Huitièmes de Finale</option>
+                                            <option value="Quarter-finals">Quarts de Finale</option>
+                                            <option value="Semi-finals">Demi-Finales</option>
+                                            <option value="Final">Finale</option>
+                                            <option value="Third Place">Petite Finale</option>
+                                        </select>
+                                        <small class="form-text text-muted">
+                                            Type de phase (optionnel)
+                                        </small>
+                                    </div>
+
+                                    <!-- Match Day -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="matchDay" class="form-label">
+                                            Journée
+                                            <i class="bi bi-info-circle text-muted"
+                                               title="Numéro de journée (pour les championnats)"
+                                               data-bs-toggle="tooltip"></i>
+                                        </label>
+                                        <input type="number"
+                                               class="form-control"
+                                               id="matchDay"
+                                               th:field="*{matchDay}"
+                                               min="1"
+                                               max="100"
+                                               placeholder="Ex: 1, 2, 38...">
+                                        <small class="form-text text-muted">
+                                            Numéro de journée (optionnel)
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <!-- Start Date -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="startDate" class="form-label">
+                                            Date de Début
+                                        </label>
+                                        <input type="date"
+                                               class="form-control"
+                                               id="startDate"
+                                               th:field="*{startDate}">
+                                        <small class="form-text text-muted">
+                                            Date de début de la phase (optionnel)
+                                        </small>
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="col-md-6 mb-3">
+                                        <label for="endDate" class="form-label">
+                                            Date de Fin
+                                        </label>
+                                        <input type="date"
+                                               class="form-control"
+                                               id="endDate"
+                                               th:field="*{endDate}">
+                                        <small class="form-text text-muted">
+                                            Date de fin de la phase (optionnel)
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <!-- Tracking Enabled -->
+                                <div class="mb-3">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input"
+                                               type="checkbox"
+                                               id="trackingEnabled"
+                                               th:field="*{trackingEnabled}">
+                                        <label class="form-check-label" for="trackingEnabled">
+                                            <strong>Activer le tracking pour cette phase</strong>
+                                            <i class="bi bi-info-circle text-muted ms-2"
+                                               title="Si désactivé, aucun match de cette phase ne sera tracké"
+                                               data-bs-toggle="tooltip"></i>
+                                        </label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Active ou désactive le tracking automatique de tous les matches de cette phase
+                                    </small>
+                                </div>
+
+                                <!-- Sync Info (if synced) -->
+                                <div th:if="${phase.externalId != null}" class="alert alert-info">
+                                    <i class="bi bi-cloud-check me-2"></i>
+                                    <strong>Phase Synchronisée</strong><br>
+                                    <small>
+                                        Cette phase a été synchronisée depuis WECANPRONO (ID externe: <code th:text="${phase.externalId}">123</code>).
+                                        Les modifications manuelles seront préservées mais certains champs peuvent être mis à jour lors de la prochaine synchronisation.
+                                    </small>
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <a th:href="@{/admin/phases(competitionId=${competitionId})}" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle"></i> Annuler
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i>
+                                        <span th:text="${isEdit ? 'Mettre à jour' : 'Créer la Phase'}">Créer</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Tips Card -->
+                    <div class="card mt-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>
+                                Conseils
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>
+                                    <strong>Nom :</strong> Choisissez un nom clair et descriptif (ex: "1ère journée", "Groupe A", "Quarts de finale")
+                                </li>
+                                <li>
+                                    <strong>Stage :</strong> Utilisez le stage pour catégoriser le type de phase (groupes, knockout, etc.)
+                                </li>
+                                <li>
+                                    <strong>Journée :</strong> Pour les championnats, indiquez le numéro de journée (1, 2, 3...)
+                                </li>
+                                <li>
+                                    <strong>Dates :</strong> Les dates aident à organiser et filtrer les phases par période
+                                </li>
+                                <li>
+                                    <strong>Tracking :</strong> Désactivez le tracking si vous ne voulez pas que les matches soient trackés automatiquement
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enable Bootstrap Tooltips -->
+    <script th:fragment="scripts">
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

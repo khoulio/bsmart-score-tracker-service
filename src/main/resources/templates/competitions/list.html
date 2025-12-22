@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Compétitions</title>
+</head>
+<body>
+    <div th:replace="~{layout/base :: html(
+        pageTitle='Compétitions',
+        content=~{::main-content}
+    )}">
+        <div th:fragment="main-content">
+            <!-- Header Actions -->
+            <div class="row mb-4">
+                <div class="col-md-12">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <a th:href="@{/admin/sync/competitions}" class="btn btn-outline-primary">
+                                <i class="bi bi-cloud-download"></i>
+                                Synchroniser avec WECANPRONO
+                            </a>
+                        </div>
+                        <div>
+                            <a th:href="@{/admin/competitions/create}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i>
+                                Nouvelle Compétition
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-trophy text-warning" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${competitions.size()}">0</h3>
+                            <p class="text-muted mb-0">Total Compétitions</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-cloud-check text-success" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${#lists.size(competitions.?[externalId != null])}">0</h3>
+                            <p class="text-muted mb-0">Synchronisées</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-pencil-square text-primary" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${#lists.size(competitions.?[externalId == null])}">0</h3>
+                            <p class="text-muted mb-0">Créées Manuellement</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <i class="bi bi-calendar3 text-info" style="font-size: 2rem;"></i>
+                            <h3 class="mt-2" th:text="${#lists.size(competitions.?[phases != null && !phases.empty])}">0</h3>
+                            <p class="text-muted mb-0">Avec Phases</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Competitions Table -->
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-trophy-fill me-2"></i>
+                            Liste des Compétitions
+                        </div>
+                        <div class="card-body p-0">
+                            <div th:if="${competitions.empty}" class="text-center p-5">
+                                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                                <p class="text-muted mt-3 mb-0">Aucune compétition trouvée</p>
+                                <a th:href="@{/admin/competitions/create}" class="btn btn-primary mt-3">
+                                    <i class="bi bi-plus-circle"></i>
+                                    Créer la première compétition
+                                </a>
+                            </div>
+
+                            <div th:if="${!competitions.empty}" class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Code</th>
+                                            <th>Nom</th>
+                                            <th>Pays</th>
+                                            <th class="text-center">Slug</th>
+                                            <th class="text-center">Source</th>
+                                            <th class="text-center">Phases</th>
+                                            <th class="text-center">Dernière Synchro</th>
+                                            <th class="text-center">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr th:each="comp : ${competitions}">
+                                            <td>
+                                                <code th:text="${comp.code}">PL</code>
+                                            </td>
+                                            <td>
+                                                <strong th:text="${comp.name}">Premier League</strong>
+                                            </td>
+                                            <td>
+                                                <span th:if="${comp.country}" th:text="${comp.country}">England</span>
+                                                <span th:unless="${comp.country}" class="text-muted">-</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${comp.slug}" class="badge bg-secondary" th:text="${comp.slug}">PL</span>
+                                                <span th:unless="${comp.slug}" class="text-muted">-</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${comp.externalId}" class="badge bg-success">
+                                                    <i class="bi bi-cloud-check"></i> Synchronisée
+                                                </span>
+                                                <span th:unless="${comp.externalId}" class="badge bg-info">
+                                                    <i class="bi bi-pencil"></i> Manuelle
+                                                </span>
+                                            </td>
+                                            <td class="text-center">
+                                                <span th:if="${comp.phases != null && !comp.phases.empty}"
+                                                      class="badge bg-primary"
+                                                      th:text="${#lists.size(comp.phases)}">0</span>
+                                                <span th:unless="${comp.phases != null && !comp.phases.empty}"
+                                                      class="text-muted">0</span>
+                                            </td>
+                                            <td class="text-center">
+                                                <small class="text-muted">
+                                                    <span th:if="${comp.lastSyncAt}"
+                                                          th:text="${#temporals.format(comp.lastSyncAt, 'dd/MM/yyyy HH:mm')}">
+                                                        -
+                                                    </span>
+                                                    <span th:unless="${comp.lastSyncAt}">Jamais</span>
+                                                </small>
+                                            </td>
+                                            <td class="text-center">
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a th:if="${comp.externalId != null}"
+                                                       th:href="@{/admin/sync/phases-matches(competitionId=${comp.id})}"
+                                                       class="btn btn-outline-success"
+                                                       title="Synchroniser Phases & Matches">
+                                                        <i class="bi bi-cloud-download"></i>
+                                                    </a>
+                                                    <a th:href="@{/admin/phases(competitionId=${comp.id})}"
+                                                       class="btn btn-outline-primary"
+                                                       title="Gérer les phases">
+                                                        <i class="bi bi-calendar3"></i>
+                                                    </a>
+                                                    <a th:href="@{/admin/competitions/{id}/edit(id=${comp.id})}"
+                                                       class="btn btn-outline-warning"
+                                                       title="Modifier">
+                                                        <i class="bi bi-pencil"></i>
+                                                    </a>
+                                                    <button type="button"
+                                                            class="btn btn-outline-danger"
+                                                            data-bs-toggle="modal"
+                                                            th:data-bs-target="'#deleteModal' + ${comp.id}"
+                                                            title="Supprimer">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Delete Confirmation Modal -->
+                                                <div class="modal fade" th:id="'deleteModal' + ${comp.id}" tabindex="-1">
+                                                    <div class="modal-dialog">
+                                                        <div class="modal-content">
+                                                            <div class="modal-header">
+                                                                <h5 class="modal-title">Confirmer la suppression</h5>
+                                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                            </div>
+                                                            <div class="modal-body">
+                                                                <p>Êtes-vous sûr de vouloir supprimer la compétition :</p>
+                                                                <p><strong th:text="${comp.name}">Competition Name</strong> (<code th:text="${comp.code}">CODE</code>)</p>
+                                                                <div class="alert alert-warning" th:if="${comp.phases != null && !comp.phases.empty}">
+                                                                    <i class="bi bi-exclamation-triangle"></i>
+                                                                    Cette compétition contient <strong th:text="${#lists.size(comp.phases)}">0</strong> phase(s) qui seront également supprimée(s).
+                                                                </div>
+                                                            </div>
+                                                            <div class="modal-footer">
+                                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                                                                <form th:action="@{/admin/competitions/{id}/delete(id=${comp.id})}" method="post" style="display:inline;">
+                                                                    <button type="submit" class="btn btn-danger">
+                                                                        <i class="bi bi-trash"></i> Supprimer
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Help Section -->
+            <div class="row mt-4">
+                <div class="col-md-12">
+                    <div class="card bg-info bg-opacity-10 border-info">
+                        <div class="card-body">
+                            <h6 class="text-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                Gestion des Compétitions
+                            </h6>
+                            <ul class="mb-0">
+                                <li>Les compétitions peuvent être <strong>synchronisées</strong> depuis WECANPRONO-SERVICE ou <strong>créées manuellement</strong></li>
+                                <li>Chaque compétition possède un <strong>code unique</strong> qui l'identifie</li>
+                                <li>Les compétitions synchronisées ont un <strong>External ID</strong> et peuvent être mises à jour automatiquement</li>
+                                <li>Cliquez sur <i class="bi bi-calendar3"></i> pour gérer les <strong>phases</strong> d'une compétition</li>
+                                <li>La suppression d'une compétition supprime également toutes ses phases et matches associés</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Compétition - Formulaire</title>
+</head>
+<body>
+    <div th:replace="~{layout/base :: html(
+        pageTitle=${isEdit ? 'Modifier Compétition' : 'Nouvelle Compétition'},
+        content=~{::main-content}
+    )}">
+        <div th:fragment="main-content">
+            <!-- Breadcrumb -->
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/admin/competitions}">Compétitions</a></li>
+                    <li class="breadcrumb-item active" th:text="${isEdit ? 'Modifier' : 'Créer'}">Créer</li>
+                </ol>
+            </nav>
+
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <i class="bi bi-trophy me-2"></i>
+                            <span th:text="${isEdit ? 'Modifier la Compétition' : 'Nouvelle Compétition'}">Nouvelle Compétition</span>
+                        </div>
+                        <div class="card-body">
+                            <form th:action="${isEdit ? '/admin/competitions/' + competition.id + '/edit' : '/admin/competitions/create'}"
+                                  th:object="${competition}"
+                                  method="post">
+
+                                <!-- Code -->
+                                <div class="mb-3">
+                                    <label for="code" class="form-label">
+                                        Code <span class="text-danger">*</span>
+                                        <i class="bi bi-info-circle text-muted"
+                                           title="Code unique de la compétition (ex: PL, FL1, UCL)"
+                                           data-bs-toggle="tooltip"></i>
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="code"
+                                           th:field="*{code}"
+                                           th:classappend="${#fields.hasErrors('code')} ? 'is-invalid' : ''"
+                                           placeholder="Ex: PL, FL1, UCL, CAN"
+                                           maxlength="50"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('code')}" th:errors="*{code}">
+                                        Erreur sur le code
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Identifiant unique court (max 50 caractères). Ex: PL pour Premier League
+                                    </small>
+                                </div>
+
+                                <!-- Name -->
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">
+                                        Nom <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="name"
+                                           th:field="*{name}"
+                                           th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                                           placeholder="Ex: Premier League, Ligue 1, UEFA Champions League"
+                                           maxlength="200"
+                                           required>
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('name')}" th:errors="*{name}">
+                                        Erreur sur le nom
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Nom complet de la compétition (max 200 caractères)
+                                    </small>
+                                </div>
+
+                                <!-- Country -->
+                                <div class="mb-3">
+                                    <label for="country" class="form-label">
+                                        Pays
+                                        <i class="bi bi-info-circle text-muted"
+                                           title="Pays ou région de la compétition"
+                                           data-bs-toggle="tooltip"></i>
+                                    </label>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="country"
+                                           th:field="*{country}"
+                                           th:classappend="${#fields.hasErrors('country')} ? 'is-invalid' : ''"
+                                           placeholder="Ex: England, France, Europe, International"
+                                           maxlength="100">
+                                    <div class="invalid-feedback" th:if="${#fields.hasErrors('country')}" th:errors="*{country}">
+                                        Erreur sur le pays
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Pays, région ou zone géographique (optionnel, max 100 caractères)
+                                    </small>
+                                </div>
+
+                                <!-- Info Box for Synced Competitions -->
+                                <div th:if="${isEdit && competition.id != null}" class="alert alert-info">
+                                    <i class="bi bi-info-circle-fill me-2"></i>
+                                    <strong>Information :</strong>
+                                    Si cette compétition a été synchronisée depuis WECANPRONO-SERVICE,
+                                    ses métadonnées (slug, logo, dates, etc.) seront automatiquement mises à jour
+                                    lors de la prochaine synchronisation, mais les champs ci-dessus (code, nom, pays)
+                                    resteront sous votre contrôle.
+                                </div>
+
+                                <!-- Action Buttons -->
+                                <div class="d-flex justify-content-between mt-4">
+                                    <a th:href="@{/admin/competitions}" class="btn btn-secondary">
+                                        <i class="bi bi-x-circle"></i> Annuler
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-save"></i>
+                                        <span th:text="${isEdit ? 'Mettre à jour' : 'Créer la Compétition'}">Créer</span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Card -->
+                    <div class="card mt-4 bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-lightbulb text-warning me-2"></i>
+                                Conseils
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li>
+                                    <strong>Code :</strong> Utilisez un code court et reconnaissable.
+                                    Exemples : PL (Premier League), FL1 (Ligue 1), UCL (Champions League)
+                                </li>
+                                <li>
+                                    <strong>Unicité :</strong> Le code doit être unique dans la base de données.
+                                    Si vous créez une compétition qui existe déjà dans WECANPRONO, utilisez la synchronisation.
+                                </li>
+                                <li>
+                                    <strong>Synchronisation :</strong> Pour les compétitions officielles,
+                                    préférez utiliser la fonction de synchronisation plutôt que la création manuelle.
+                                </li>
+                                <li>
+                                    <strong>Pays :</strong> Indiquez le pays pour les compétitions nationales,
+                                    ou "Europe", "International" pour les compétitions multi-pays.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Example Codes Card -->
+                    <div class="card mt-3">
+                        <div class="card-body">
+                            <h6 class="card-title">
+                                <i class="bi bi-card-list text-primary me-2"></i>
+                                Exemples de Codes Courants
+                            </h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <ul class="small mb-0">
+                                        <li><code>PL</code> - Premier League (England)</li>
+                                        <li><code>FL1</code> - Ligue 1 (France)</li>
+                                        <li><code>LL</code> - La Liga (Spain)</li>
+                                        <li><code>SA</code> - Serie A (Italy)</li>
+                                        <li><code>BL</code> - Bundesliga (Germany)</li>
+                                    </ul>
+                                </div>
+                                <div class="col-md-6">
+                                    <ul class="small mb-0">
+                                        <li><code>UCL</code> - UEFA Champions League</li>
+                                        <li><code>UEL</code> - UEFA Europa League</li>
+                                        <li><code>CAN</code> - Coupe d'Afrique des Nations</li>
+                                        <li><code>WC</code> - World Cup</li>
+                                        <li><code>EC</code> - European Championship</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enable Bootstrap Tooltips -->
+    <script th:fragment="scripts">
+        document.addEventListener('DOMContentLoaded', function() {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+        });
+    </script>
+</body>
+</html>

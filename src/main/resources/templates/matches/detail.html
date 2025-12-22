@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Match - Détails</title></head>
+<body>
+<div th:replace="~{layout/base :: html(pageTitle='Match - Détails', content=~{::main-content})}">
+<div th:fragment="main-content">
+
+<!-- Match Info Card -->
+<div class="row mb-4">
+<div class="col-md-12">
+<div class="card">
+<div class="card-header bg-primary text-white">
+<h4 class="mb-0"><span th:text="${match.homeTeam}">Home</span> vs <span th:text="${match.awayTeam}">Away</span></h4>
+</div>
+<div class="card-body">
+<div class="row">
+<div class="col-md-4 text-center">
+<h1 th:if="${match.scoreHome != null && match.scoreAway != null}">
+<span th:text="${match.scoreHome}">0</span> - <span th:text="${match.scoreAway}">0</span>
+</h1>
+<p th:unless="${match.scoreHome != null && match.scoreAway != null}" class="text-muted">Pas de score</p>
+<span th:if="${match.status.name() == 'IN_PLAY'}" class="badge bg-danger">EN COURS</span>
+<span th:if="${match.status.name() == 'FINISHED'}" class="badge bg-success">TERMINÉ</span>
+<span th:if="${match.status.name() == 'HALF_TIME'}" class="badge bg-warning">MI-TEMPS</span>
+<span th:if="${match.status.name() == 'SCHEDULED'}" class="badge bg-secondary">PROGRAMMÉ</span>
+</div>
+<div class="col-md-8">
+<p><strong>Phase:</strong> <span th:text="${match.phaseName}">Phase</span></p>
+<p><strong>Compétition:</strong> <span th:text="${match.competitionName}">Competition</span></p>
+<p><strong>Coup d'envoi:</strong> <span th:text="${#temporals.format(match.kickoffUtc, 'dd/MM/yyyy HH:mm')}">Date</span> UTC</p>
+<p><strong>Provider:</strong> <span th:text="${match.provider}">Provider</span></p>
+<p><strong>Tracking:</strong> 
+<span th:if="${match.trackingEnabled}" class="badge bg-success">Activé</span>
+<span th:unless="${match.trackingEnabled}" class="badge bg-secondary">Désactivé</span>
+</p>
+<p th:if="${match.minute}"><strong>Minute:</strong> <span th:text="${match.minute}">90'</span></p>
+<div class="mt-3">
+<form th:action="@{/admin/matches/{id}/refresh(id=${match.id})}" method="post" style="display:inline;" class="me-2">
+<button type="submit" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> Rafraîchir</button>
+</form>
+<a th:href="@{/admin/matches/{id}/edit(id=${match.id}, phaseId=${match.phaseId})}" class="btn btn-warning"><i class="bi bi-pencil"></i> Modifier</a>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Events Timeline -->
+<div class="row">
+<div class="col-md-12">
+<div class="card">
+<div class="card-header"><i class="bi bi-clock-history me-2"></i>Historique des Événements (<span th:text="${#lists.size(events)}">0</span>)</div>
+<div class="card-body">
+<div th:if="${events == null || events.empty}" class="text-center p-4">
+<p class="text-muted">Aucun événement enregistré</p>
+</div>
+<div th:if="${events != null && !events.empty}">
+<div class="table-responsive">
+<table class="table table-sm">
+<thead>
+<tr>
+<th>Timestamp</th>
+<th>Type</th>
+<th>Détails</th>
+<th>Déclenché par</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="event : ${events}">
+<td><small th:text="${#temporals.format(event.timestamp, 'dd/MM HH:mm:ss')}">Time</small></td>
+<td>
+<span th:if="${event.eventType.name() == 'STATUS_CHANGE'}" class="badge bg-info">Changement Statut</span>
+<span th:if="${event.eventType.name() == 'SCORE_CHANGE'}" class="badge bg-success">Changement Score</span>
+<span th:if="${event.eventType.name() == 'TRACKING_ENABLED'}" class="badge bg-primary">Tracking ON</span>
+<span th:if="${event.eventType.name() == 'TRACKING_DISABLED'}" class="badge bg-secondary">Tracking OFF</span>
+<span th:if="${event.eventType.name() == 'MANUAL_REFRESH'}" class="badge bg-warning">Refresh Manuel</span>
+</td>
+<td>
+<span th:if="${event.eventType.name() == 'STATUS_CHANGE'}">
+<span th:text="${event.oldStatus}">OLD</span> → <span th:text="${event.newStatus}">NEW</span>
+</span>
+<span th:if="${event.eventType.name() == 'SCORE_CHANGE'}">
+<span th:text="${event.oldScoreHome}">0</span>-<span th:text="${event.oldScoreAway}">0</span> → 
+<span th:text="${event.newScoreHome}">1</span>-<span th:text="${event.newScoreAway}">0</span>
+</span>
+</td>
+<td><small th:text="${event.triggeredBy}">System</small></td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+</body>
+</html>

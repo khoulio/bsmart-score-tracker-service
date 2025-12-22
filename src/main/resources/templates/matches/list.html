@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>Matches</title></head>
+<body>
+<div th:replace="~{layout/base :: html(pageTitle='Matches', content=~{::main-content})}">
+<div th:fragment="main-content">
+<!-- Header -->
+<div class="row mb-3" th:if="${phase != null}">
+<div class="col-md-12">
+<div class="card bg-light">
+<div class="card-body d-flex justify-content-between align-items-center">
+<div>
+<h5 class="mb-0"><i class="bi bi-flag-fill text-primary"></i> <span th:text="${phase.competitionName}">Competition</span> - <span th:text="${phase.name}">Phase</span></h5>
+</div>
+<a th:href="@{/admin/matches/create(phaseId=${phaseId})}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nouveau Match</a>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Matches Table -->
+<div class="card">
+<div class="card-header"><i class="bi bi-flag-fill me-2"></i>Liste des Matches</div>
+<div class="card-body p-0">
+<div th:if="${matches == null || matches.empty}" class="text-center p-5">
+<i class="bi bi-inbox text-muted" style="font-size:3rem;"></i>
+<p class="text-muted mt-3">Aucun match trouvé</p>
+<a th:if="${phaseId != null}" th:href="@{/admin/matches/create(phaseId=${phaseId})}" class="btn btn-primary mt-2">Créer le premier match</a>
+</div>
+<div th:if="${matches != null && !matches.empty}" class="table-responsive">
+<table class="table table-hover mb-0">
+<thead class="table-light">
+<tr>
+<th>Match</th>
+<th>Date</th>
+<th class="text-center">Score</th>
+<th class="text-center">Statut</th>
+<th class="text-center">Tracking</th>
+<th class="text-center">Actions</th>
+</tr>
+</thead>
+<tbody>
+<tr th:each="match : ${matches}">
+<td><strong th:text="${match.homeTeam}">Home</strong> vs <strong th:text="${match.awayTeam}">Away</strong></td>
+<td><small th:text="${#temporals.format(match.kickoffUtc, 'dd/MM/yyyy HH:mm')}">Date</small></td>
+<td class="text-center">
+<span th:if="${match.scoreHome != null && match.scoreAway != null}" class="badge bg-dark">
+<span th:text="${match.scoreHome}">0</span> - <span th:text="${match.scoreAway}">0</span>
+</span>
+<span th:unless="${match.scoreHome != null && match.scoreAway != null}">-</span>
+</td>
+<td class="text-center">
+<span th:if="${match.status.name() == 'FINISHED'}" class="badge bg-success">Terminé</span>
+<span th:if="${match.status.name() == 'IN_PLAY'}" class="badge bg-danger">En cours</span>
+<span th:if="${match.status.name() == 'HALF_TIME'}" class="badge bg-warning">Mi-temps</span>
+<span th:if="${match.status.name() == 'SCHEDULED'}" class="badge bg-secondary">Programmé</span>
+</td>
+<td class="text-center">
+<form th:action="@{/admin/matches/{id}/toggle-tracking(id=${match.id})}" method="post" style="display:inline;">
+<input type="hidden" name="phaseId" th:value="${match.phaseId}">
+<button type="submit" class="btn btn-sm" th:classappend="${match.trackingEnabled ? 'btn-success' : 'btn-secondary'}">
+<i th:class="${match.trackingEnabled ? 'bi bi-toggle-on' : 'bi bi-toggle-off'}"></i>
+</button>
+</form>
+</td>
+<td class="text-center">
+<div class="btn-group btn-group-sm">
+<a th:href="@{/admin/matches/{id}(id=${match.id})}" class="btn btn-outline-info" title="Détails"><i class="bi bi-eye"></i></a>
+<a th:href="@{/admin/matches/{id}/edit(id=${match.id}, phaseId=${match.phaseId})}" class="btn btn-outline-warning" title="Modifier"><i class="bi bi-pencil"></i></a>
+<form th:action="@{/admin/matches/{id}/refresh(id=${match.id})}" method="post" style="display:inline;">
+<input type="hidden" name="phaseId" th:value="${match.phaseId}">
+<button type="submit" class="btn btn-outline-primary btn-sm" title="Rafraîchir"><i class="bi bi-arrow-clockwise"></i></button>
+</form>
+<button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${match.id}" title="Supprimer"><i class="bi bi-trash"></i></button>
+</div>
+<!-- Delete Modal -->
+<div class="modal fade" th:id="'deleteModal' + ${match.id}" tabindex="-1">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title">Confirmer suppression</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+</div>
+<div class="modal-body">
+<p>Supprimer le match <strong th:text="${match.homeTeam + ' vs ' + match.awayTeam}">Match</strong> ?</p>
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+<form th:action="@{/admin/matches/{id}/delete(id=${match.id})}" method="post" style="display:inline;">
+<input type="hidden" name="phaseId" th:value="${match.phaseId}">
+<button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Supprimer</button>
+</form>
+</div>
+</div>
+</div>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
