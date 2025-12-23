@@ -10,6 +10,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.io.IOException;
  * Scraper LiveScore utilisant Jsoup (léger, sans Chrome)
  */
 @Component
-@ConditionalOnProperty(name = "scraper.engine", havingValue = "jsoup", matchIfMissing = false)
+@Profile("jsoup")
 @Slf4j
 public class LiveScoreJsoupProvider implements MatchScraperProvider {
 

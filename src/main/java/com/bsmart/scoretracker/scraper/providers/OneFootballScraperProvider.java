@@ -13,12 +13,14 @@ import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
 
 @Component
-@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "selenium.enabled", havingValue = "true", matchIfMissing = true)
+@Profile("selenium")
 @RequiredArgsConstructor
 @Slf4j
 public class OneFootballScraperProvider implements MatchScraperProvider {

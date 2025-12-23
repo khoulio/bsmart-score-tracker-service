@@ -4,15 +4,30 @@ import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.chrome.ChromeDriver;
 import org.openqa.selenium.chrome.ChromeOptions;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Scope;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 @Configuration
 @Slf4j
 public class SeleniumConfig {
+
+    /**
+     * selenium.enabled=true/false : active ou non Selenium
+     * selenium.mode=local|remote  : local = ChromeDriver, remote = Selenium Grid
+     * selenium.remote-url         : URL du Grid (ex: http://selenium:4444/wd/hub ou http://selenium:4444)
+     */
+    @Value("${selenium.mode:local}")
+    private String mode;
+
+    @Value("${selenium.remote-url:}")
+    private String remoteUrl;
 
     @Value("${selenium.chrome.headless:true}")
     private boolean headless;
@@ -33,63 +48,83 @@ public class SeleniumConfig {
     @Scope("prototype")
     @ConditionalOnProperty(name = "selenium.enabled", havingValue = "true", matchIfMissing = true)
     public WebDriver webDriver() {
+        ChromeOptions options = buildChromeOptions();
+
+        if ("remote".equalsIgnoreCase(mode)) {
+            return buildRemoteWebDriver(options);
+        }
+
+        return buildLocalChromeDriver(options);
+    }
+
+    private ChromeOptions buildChromeOptions() {
         ChromeOptions options = new ChromeOptions();
 
-        // Configuration pour Docker/conteneur
-        // Spécifier le binaire Chrome si défini via variable d'environnement
+        // Si tu veux forcer un binaire Chrome en LOCAL uniquement
         String chromeBin = System.getenv("CHROME_BIN");
         if (chromeBin != null && !chromeBin.isEmpty()) {
             options.setBinary(chromeBin);
             log.info("Using Chrome binary: {}", chromeBin);
         }
 
-        // Arguments essentiels pour Chrome headless dans Docker
         if (headless) {
-            options.addArguments("--headless=new"); // Nouvelle syntaxe headless
-            log.info("Chrome headless mode enabled");
+            options.addArguments("--headless=new");
         }
-
         if (disableGpu) {
             options.addArguments("--disable-gpu");
         }
-
         if (noSandbox) {
             options.addArguments("--no-sandbox");
         }
-
         if (disableDevShmUsage) {
             options.addArguments("--disable-dev-shm-usage");
         }
 
-        // Options supplémentaires pour stabilité dans Docker
         options.addArguments("--window-size=" + windowSize);
-        options.addArguments("--disable-blink-features=AutomationControlled");
+
+        // Garde seulement ce qui est utile (le reste peut être conservé)
         options.addArguments("--disable-extensions");
         options.addArguments("--disable-software-rasterizer");
-        options.addArguments("--disable-setuid-sandbox");
-        options.addArguments("--remote-debugging-port=9222");
 
-        // Additional stability options for complex environments
-        options.addArguments("--disable-features=TranslateUI");
-        options.addArguments("--disable-default-apps");
-        options.addArguments("--disable-background-networking");
-        options.addArguments("--disable-sync");
-        options.addArguments("--metrics-recording-only");
-        options.addArguments("--disable-ipc-flooding-protection");
-        options.addArguments("--disable-component-extensions-with-background-pages");
-        
+        // ⚠️ remote-debugging-port peut poser souci en remote (inutile)
+        // options.addArguments("--remote-debugging-port=9222");
+
         options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
-            "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
+                "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 
-        log.info("Initializing Chrome WebDriver with options: headless={}, no-sandbox={}, disable-dev-shm={}, binary={}",
-            headless, noSandbox, disableDevShmUsage, chromeBin != null ? chromeBin : "default");
+        log.info("Chrome options prepared: headless={}, noSandbox={}, disableDevShmUsage={}",
+                headless, noSandbox, disableDevShmUsage);
+
+        return options;
+    }
+
+    private WebDriver buildRemoteWebDriver(ChromeOptions options) {
+        if (remoteUrl == null || remoteUrl.isBlank()) {
+            throw new IllegalStateException("selenium.mode=remote mais selenium.remote-url est vide. " +
+                    "Ex: http://selenium:4444/wd/hub (docker) ou http://localhost:4444/wd/hub (local)");
+        }
 
         try {
+            log.info("Initializing REMOTE WebDriver (Selenium Grid) with url={}", remoteUrl);
+            RemoteWebDriver driver = new RemoteWebDriver(new URL(remoteUrl), options);
+            log.info("Remote WebDriver initialized successfully");
+            return driver;
+        } catch (MalformedURLException e) {
+            throw new IllegalArgumentException("selenium.remote-url invalide: " + remoteUrl, e);
+        } catch (Exception e) {
+            log.error("Failed to initialize Remote WebDriver: {}", e.getMessage(), e);
+            throw e;
+        }
+    }
+
+    private WebDriver buildLocalChromeDriver(ChromeOptions options) {
+        try {
+            log.info("Initializing LOCAL ChromeDriver");
             ChromeDriver driver = new ChromeDriver(options);
-            log.info("Chrome WebDriver initialized successfully");
+            log.info("Local ChromeDriver initialized successfully");
             return driver;
         } catch (Exception e) {
-            log.error("Failed to initialize Chrome WebDriver: {}", e.getMessage(), e);
+            log.error("Failed to initialize Local ChromeDriver: {}", e.getMessage(), e);
             throw e;
         }
     }

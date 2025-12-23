@@ -1,6 +1,7 @@
 package com.bsmart.scoretracker.scraper;
 
 import com.bsmart.scoretracker.model.enums.ProviderType;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -9,6 +10,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
+@Profile("selenium")
 public class ScraperProviderFactory {
 
     private final Map<ProviderType, MatchScraperProvider> providers;
