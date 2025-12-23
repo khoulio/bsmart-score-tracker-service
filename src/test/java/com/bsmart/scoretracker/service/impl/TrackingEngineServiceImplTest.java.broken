@@ -182,7 +182,7 @@ class TrackingEngineServiceImplTest {
         trackingEngineService.trackMatch(match);
 
         // Then - Should reset counter and set new candidate
-        assertEquals(MatchStatus.HALF_TIME, match.getStatusCandidate());
+        assertEquals(MatchStatus.PAUSED, match.getStatusCandidate());
         assertEquals(1, match.getConsecutiveSameCandidate());
         assertEquals(MatchStatus.SCHEDULED, match.getStatus()); // Status unchanged
     }
@@ -213,14 +213,14 @@ class TrackingEngineServiceImplTest {
         // SCHEDULED -> IN_PLAY
         assertTrue(isValidTransitionHelper(MatchStatus.SCHEDULED, MatchStatus.IN_PLAY));
 
-        // IN_PLAY -> HALF_TIME
-        assertTrue(isValidTransitionHelper(MatchStatus.IN_PLAY, MatchStatus.HALF_TIME));
+        // IN_PLAY -> PAUSED
+        assertTrue(isValidTransitionHelper(MatchStatus.IN_PLAY, MatchStatus.PAUSED));
 
-        // HALF_TIME -> IN_PLAY
-        assertTrue(isValidTransitionHelper(MatchStatus.HALF_TIME, MatchStatus.IN_PLAY));
+        // PAUSED -> IN_PLAY
+        assertTrue(isValidTransitionHelper(MatchStatus.PAUSED, MatchStatus.IN_PLAY));
 
-        // HALF_TIME -> FINISHED
-        assertTrue(isValidTransitionHelper(MatchStatus.HALF_TIME, MatchStatus.FINISHED));
+        // PAUSED -> FINISHED
+        assertTrue(isValidTransitionHelper(MatchStatus.PAUSED, MatchStatus.FINISHED));
 
         // SCHEDULED -> FINISHED (tolerated: tracker started late)
         assertTrue(isValidTransitionHelper(MatchStatus.SCHEDULED, MatchStatus.FINISHED));
@@ -286,7 +286,7 @@ class TrackingEngineServiceImplTest {
             trackingEngineService.normalizeStatus("FT", ProviderType.ONE_FOOTBALL));
         assertEquals(MatchStatus.FINISHED,
             trackingEngineService.normalizeStatus("FULL TIME", ProviderType.ONE_FOOTBALL));
-        assertEquals(MatchStatus.HALF_TIME,
+        assertEquals(MatchStatus.PAUSED,
             trackingEngineService.normalizeStatus("HT", ProviderType.ONE_FOOTBALL));
         assertEquals(MatchStatus.IN_PLAY,
             trackingEngineService.normalizeStatus("LIVE", ProviderType.ONE_FOOTBALL));
@@ -300,7 +300,7 @@ class TrackingEngineServiceImplTest {
     void testNormalizeStatus_LiveScore() {
         assertEquals(MatchStatus.FINISHED,
             trackingEngineService.normalizeStatus("FT", ProviderType.LIVE_SCORE));
-        assertEquals(MatchStatus.HALF_TIME,
+        assertEquals(MatchStatus.PAUSED,
             trackingEngineService.normalizeStatus("HALFTIME", ProviderType.LIVE_SCORE));
         assertEquals(MatchStatus.IN_PLAY,
             trackingEngineService.normalizeStatus("LIVE", ProviderType.LIVE_SCORE));
@@ -330,8 +330,8 @@ class TrackingEngineServiceImplTest {
 
         // Then
         assertTrue(match.getHalfTimeSeen());
-        // Should suggest HALF_TIME status
-        assertEquals(MatchStatus.HALF_TIME, match.getStatusCandidate());
+        // Should suggest PAUSED status
+        assertEquals(MatchStatus.PAUSED, match.getStatusCandidate());
     }
 
     @Test

@@ -41,6 +41,10 @@ public class MatchDTO {
     private Long teamDomicileId;
     private Long teamExterieurId;
     private Boolean isProlongationEnabled;
+    private Integer scoreHomeTAB;
+    private Integer scoreAwayTAB;
+    private Boolean winnerHomeTAB;
+    private Boolean winnerAwayTAB;
     private Boolean isMonetized;
     private Boolean isHalfTimeSend;
     private Boolean isEndHalfTimeSend;

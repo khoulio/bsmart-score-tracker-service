@@ -93,7 +93,7 @@ class MatchTrackingSchedulerTest {
             .provider(ProviderType.ONE_FOOTBALL)
             .matchUrl("https://onefootball.com/match/3")
             .trackingEnabled(true)
-            .status(MatchStatus.HALF_TIME)
+            .status(MatchStatus.PAUSED)
             .build();
 
         scheduledMatchNear = Match.builder()
@@ -175,7 +175,7 @@ class MatchTrackingSchedulerTest {
     @Test
     void testTrackHalfTimeMatches_Success() {
         // Given
-        when(matchRepository.findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.HALF_TIME)))
+        when(matchRepository.findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.PAUSED)))
             .thenReturn(Arrays.asList(halfTimeMatch));
         doNothing().when(trackingEngine).trackMatch(any(Match.class));
 
@@ -183,21 +183,21 @@ class MatchTrackingSchedulerTest {
         scheduler.trackHalfTimeMatches();
 
         // Then
-        verify(matchRepository).findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.HALF_TIME));
+        verify(matchRepository).findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.PAUSED));
         verify(trackingEngine).trackMatch(halfTimeMatch);
     }
 
     @Test
     void testTrackHalfTimeMatches_NoMatches() {
         // Given
-        when(matchRepository.findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.HALF_TIME)))
+        when(matchRepository.findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.PAUSED)))
             .thenReturn(Collections.emptyList());
 
         // When
         scheduler.trackHalfTimeMatches();
 
         // Then
-        verify(matchRepository).findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.HALF_TIME));
+        verify(matchRepository).findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.PAUSED));
         verify(trackingEngine, never()).trackMatch(any());
     }
 
@@ -230,7 +230,7 @@ class MatchTrackingSchedulerTest {
         long minutesFromStart = java.time.Duration.between(start, now).toMinutes();
         long minutesToEnd = java.time.Duration.between(now, end).toMinutes();
 
-        assertEquals(10, minutesFromStart, 1); // Should be ~10 minutes before now
+        assertEquals(240, minutesFromStart, 1); // Should be ~240 minutes before now
         assertEquals(60, minutesToEnd, 1); // Should be ~60 minutes after now
     }
 
@@ -330,7 +330,8 @@ class MatchTrackingSchedulerTest {
         scheduler.trackScheduledMatchesFarFromKickoff();
 
         // Then
-        verify(matchRepository, times(2)).findByTrackingEnabledTrueAndStatusIn(anyList());
+        verify(matchRepository, times(1)).findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.IN_PLAY));
+        verify(matchRepository, times(1)).findByTrackingEnabledTrueAndStatusIn(Arrays.asList(MatchStatus.PAUSED));
         verify(matchRepository, times(2)).findByTrackingEnabledTrueAndStatusAndKickoffUtcBetween(
             any(), any(), any());
     }

@@ -28,4 +28,6 @@ public interface MatchService {
     void disableTracking(Long id);
 
     MatchDTO refreshMatch(Long id);
+
+    MatchDTO manualUpdate(Long id, Integer scoreHome, Integer scoreAway, MatchStatus status, Integer scoreHomeTAB, Integer scoreAwayTAB);
 }

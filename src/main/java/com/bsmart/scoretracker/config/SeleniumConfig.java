@@ -68,6 +68,16 @@ public class SeleniumConfig {
         options.addArguments("--disable-software-rasterizer");
         options.addArguments("--disable-setuid-sandbox");
         options.addArguments("--remote-debugging-port=9222");
+
+        // Additional stability options for complex environments
+        options.addArguments("--disable-features=TranslateUI");
+        options.addArguments("--disable-default-apps");
+        options.addArguments("--disable-background-networking");
+        options.addArguments("--disable-sync");
+        options.addArguments("--metrics-recording-only");
+        options.addArguments("--disable-ipc-flooding-protection");
+        options.addArguments("--disable-component-extensions-with-background-pages");
+        
         options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) " +
             "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
 

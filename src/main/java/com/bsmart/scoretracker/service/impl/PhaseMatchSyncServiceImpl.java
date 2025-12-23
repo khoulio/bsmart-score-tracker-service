@@ -242,7 +242,7 @@ public class PhaseMatchSyncServiceImpl implements PhaseMatchSyncService {
         return switch (externalStatus.toUpperCase()) {
             case "FINISHED" -> MatchStatus.FINISHED;
             case "IN_PLAY", "LIVE" -> MatchStatus.IN_PLAY;
-            case "HALF_TIME", "HALFTIME" -> MatchStatus.HALF_TIME;
+            case "HALF_TIME", "HALFTIME" -> MatchStatus.PAUSED;
             default -> {
                 if (Boolean.TRUE.equals(isEnd)) {
                     yield MatchStatus.FINISHED;

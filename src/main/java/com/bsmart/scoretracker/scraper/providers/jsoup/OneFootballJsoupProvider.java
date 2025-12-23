@@ -97,7 +97,7 @@ public class OneFootballJsoupProvider implements MatchScraperProvider {
             }
 
             if (isHalfTime) {
-                rawStatus = "HALF_TIME";
+                rawStatus = "PAUSED";
             } else if (rawStatus.contains("Live") || rawStatus.contains("'")) {
                 rawStatus = "IN_PLAY";
             } else if (rawStatus.contains("Finished") || rawStatus.contains("FT")) {

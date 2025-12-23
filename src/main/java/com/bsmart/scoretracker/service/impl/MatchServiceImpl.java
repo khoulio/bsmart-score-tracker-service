@@ -3,7 +3,9 @@ package com.bsmart.scoretracker.service.impl;
 import com.bsmart.scoretracker.dto.MatchDTO;
 import com.bsmart.scoretracker.exception.ResourceNotFoundException;
 import com.bsmart.scoretracker.model.Match;
+import com.bsmart.scoretracker.model.MatchEvent;
 import com.bsmart.scoretracker.model.Phase;
+import com.bsmart.scoretracker.model.enums.EventType;
 import com.bsmart.scoretracker.model.enums.MatchStatus;
 import com.bsmart.scoretracker.repository.MatchRepository;
 import com.bsmart.scoretracker.repository.PhaseRepository;
@@ -161,6 +163,59 @@ public class MatchServiceImpl implements MatchService {
         return toDTO(match);
     }
 
+    @Override
+    @Transactional
+    public MatchDTO manualUpdate(Long id, Integer scoreHome, Integer scoreAway, MatchStatus status, Integer scoreHomeTAB, Integer scoreAwayTAB) {
+        Match match = matchRepository.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Match", id));
+
+        log.info("Manually updating match {} ({} vs {}). New state: Score {} - {}, Status {}, Penalties: {} - {}",
+                id, match.getHomeTeam(), match.getAwayTeam(), scoreHome, scoreAway, status, scoreHomeTAB, scoreAwayTAB);
+
+        MatchEvent event = MatchEvent.builder()
+                .match(match)
+                .eventType(EventType.MANUAL_UPDATE)
+                .oldStatus(match.getStatus())
+                .newStatus(status)
+                .oldScoreHome(match.getScoreHome())
+                .oldScoreAway(match.getScoreAway())
+                .newScoreHome(scoreHome)
+                .newScoreAway(scoreAway)
+                .triggeredBy("MANUAL")
+                .build();
+        match.getEvents().add(event);
+
+        match.setScoreHome(scoreHome);
+        match.setScoreAway(scoreAway);
+        match.setStatus(status);
+
+        // Set penalty shootout scores
+        match.setScoreHomeTAB(scoreHomeTAB);
+        match.setScoreAwayTAB(scoreAwayTAB);
+        // Determine winners if penalties are provided and final score is draw
+        if (scoreHomeTAB != null && scoreAwayTAB != null && scoreHome != null && scoreAway != null && scoreHome.equals(scoreAway)) {
+            match.setWinnerHomeTAB(scoreHomeTAB > scoreAwayTAB);
+            match.setWinnerAwayTAB(scoreAwayTAB > scoreHomeTAB);
+        } else {
+            match.setWinnerHomeTAB(null);
+            match.setWinnerAwayTAB(null);
+        }
+
+        // When manually updating, we should probably reset any anti-flapping/candidate logic
+        // to ensure the manual state sticks without being overridden by the next scrape.
+        match.setStatusCandidate(null);
+        match.setConsecutiveSameCandidate(0);
+        match.setStatusCandidateSinceUtc(null);
+
+        // Also, let's mark tracking as disabled to prevent the scraper from overwriting the manual data.
+        // The user can re-enable it if needed.
+        match.setTrackingEnabled(false);
+        log.warn("Tracking for match {} has been disabled due to manual update.", id);
+
+        Match updated = matchRepository.save(match);
+        return toDTO(updated);
+    }
+
     private MatchDTO toDTO(Match match) {
         return MatchDTO.builder()
             .id(match.getId())
@@ -188,6 +243,10 @@ public class MatchServiceImpl implements MatchService {
             .teamDomicileId(match.getTeamDomicileId())
             .teamExterieurId(match.getTeamExterieurId())
             .isProlongationEnabled(match.getIsProlongationEnabled())
+            .scoreHomeTAB(match.getScoreHomeTAB())
+            .scoreAwayTAB(match.getScoreAwayTAB())
+            .winnerHomeTAB(match.getWinnerHomeTAB())
+            .winnerAwayTAB(match.getWinnerAwayTAB())
             .isMonetized(match.getIsMonetized())
             .isHalfTimeSend(match.getIsHalfTimeSend())
             .isEndHalfTimeSend(match.getIsEndHalfTimeSend())

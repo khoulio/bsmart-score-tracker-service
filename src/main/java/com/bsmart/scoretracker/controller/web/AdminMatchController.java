@@ -72,6 +72,7 @@ public class AdminMatchController {
             match.setStatus(MatchStatus.SCHEDULED);
             model.addAttribute("match", match);
             model.addAttribute("isEdit", false);
+            model.addAttribute("isManualUpdate", false);
 
             return "matches/form";
         } catch (ResourceNotFoundException e) {
@@ -123,6 +124,7 @@ public class AdminMatchController {
             model.addAttribute("phase", phase);
             model.addAttribute("phaseId", phaseId);
             model.addAttribute("isEdit", true);
+            model.addAttribute("isManualUpdate", false);
 
             return "matches/form";
         } catch (ResourceNotFoundException e) {
@@ -161,6 +163,38 @@ public class AdminMatchController {
                 "Erreur lors de la modification: " + e.getMessage());
             return "redirect:/admin/matches/" + id + "/edit?phaseId=" + phaseId;
         }
+    }
+
+    @GetMapping("/{id}/manual-update")
+    public String manualUpdateForm(@PathVariable Long id, Model model, RedirectAttributes redirectAttributes) {
+        try {
+            MatchDTO match = matchService.getMatchById(id);
+            model.addAttribute("pageTitle", "Mise à jour manuelle");
+            model.addAttribute("match", match);
+            model.addAttribute("allStatus", MatchStatus.values());
+            model.addAttribute("isManualUpdate", true);
+            return "matches/form";
+        } catch (ResourceNotFoundException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Match non trouvé");
+            return "redirect:/admin/matches";
+        }
+    }
+
+    @PostMapping("/{id}/manual-update")
+    public String manualUpdate(@PathVariable Long id,
+                               @RequestParam Integer scoreHome,
+                               @RequestParam Integer scoreAway,
+                               @RequestParam MatchStatus status,
+                               @RequestParam(required = false) Integer scoreHomeTAB,
+                               @RequestParam(required = false) Integer scoreAwayTAB,
+                               RedirectAttributes redirectAttributes) {
+        try {
+            matchService.manualUpdate(id, scoreHome, scoreAway, status, scoreHomeTAB, scoreAwayTAB);
+            redirectAttributes.addFlashAttribute("successMessage", "Match mis à jour manuellement avec succès.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Erreur lors de la mise à jour manuelle: " + e.getMessage());
+        }
+        return "redirect:/admin/matches/" + id;
     }
 
     @PostMapping("/{id}/delete")

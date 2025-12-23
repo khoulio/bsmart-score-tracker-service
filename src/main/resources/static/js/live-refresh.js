@@ -208,7 +208,7 @@
         const statusMap = {
             'SCHEDULED': 'Programmé',
             'IN_PLAY': 'En direct',
-            'HALF_TIME': 'Mi-temps',
+            'PAUSED': 'Pause',
             'FINISHED': 'Terminé'
         };
 

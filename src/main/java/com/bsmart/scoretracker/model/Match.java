@@ -93,6 +93,18 @@ public class Match {
     @Column(name = "is_prolongation_enabled")
     private Boolean isProlongationEnabled; // Prolongations activées
 
+    @Column(name = "score_home_tab")
+    private Integer scoreHomeTAB;
+
+    @Column(name = "score_away_tab")
+    private Integer scoreAwayTAB;
+
+    @Column(name = "winner_home_tab")
+    private Boolean winnerHomeTAB;
+
+    @Column(name = "winner_away_tab")
+    private Boolean winnerAwayTAB;
+
     @Column(name = "is_monetized")
     private Boolean isMonetized; // Match monétisé
 

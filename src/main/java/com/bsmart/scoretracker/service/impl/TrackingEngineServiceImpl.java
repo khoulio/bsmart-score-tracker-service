@@ -115,7 +115,7 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         // EXCEPTION: Auto-correction for wrongly marked FINISHED matches
         // MUST BE FIRST - before the terminal state check!
         if (currentStatus == MatchStatus.FINISHED &&
-            (newStatus == MatchStatus.IN_PLAY || newStatus == MatchStatus.HALF_TIME) &&
+            (newStatus == MatchStatus.IN_PLAY || newStatus == MatchStatus.PAUSED) &&
             match.getMinute() != null && !match.getMinute().isEmpty()) {
 
             log.warn("AUTO-CORRECTION: Match {} was marked FINISHED but is actually {} (minute: {}). Forcing correction and re-enabling tracking.",
@@ -144,8 +144,8 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
 
         // Same status, no change needed
         if (currentStatus == newStatus) {
-            // Reset candidate if status is stable
-            if (match.getStatusCandidate() != null) {
+            // Reset candidate if status is stable, but NOT if it's the one we are tracking
+            if (match.getStatusCandidate() != null && !newStatus.equals(match.getStatusCandidate())) {
                 match.setStatusCandidate(null);
                 match.setConsecutiveSameCandidate(0);
                 match.setStatusCandidateSinceUtc(null);
@@ -269,7 +269,7 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
 
     private void detectHalfTime(Match match, MatchStatus status, String minute) {
         // Heuristic: If status is IN_PLAY and minute is around 45-47,
-        // and we haven't seen half-time yet, suggest HALF_TIME
+        // and we haven't seen half-time yet, suggest PAUSED
         if (status == MatchStatus.IN_PLAY && !match.getHalfTimeSeen()) {
             if (minute != null && isHalfTimeMinute(minute)) {
 
@@ -277,13 +277,13 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
                     match.getId(), minute);
 
                 // Suggest half-time via status change
-                processStatusChange(match, MatchStatus.HALF_TIME);
+                processStatusChange(match, MatchStatus.PAUSED);
                 match.setHalfTimeSeen(true);
             }
         }
 
         // Mark half-time as seen if we're in HALF_TIME status
-        if (status == MatchStatus.HALF_TIME || match.getStatus() == MatchStatus.HALF_TIME) {
+        if (status == MatchStatus.PAUSED || match.getStatus() == MatchStatus.PAUSED) {
             match.setHalfTimeSeen(true);
         }
     }
@@ -303,9 +303,9 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
     }
 
     private boolean isValidTransition(MatchStatus from, MatchStatus to) {
-        // SCHEDULED -> IN_PLAY, HALF_TIME, FINISHED (tolerated: started late)
-        // IN_PLAY -> HALF_TIME, FINISHED
-        // HALF_TIME -> IN_PLAY, FINISHED
+        // SCHEDULED -> IN_PLAY, PAUSED, FINISHED (tolerated: started late)
+        // IN_PLAY -> PAUSED, FINISHED
+        // PAUSED -> IN_PLAY, FINISHED
         // FINISHED -> (terminal, no transitions)
 
         if (from == MatchStatus.FINISHED) {
@@ -313,15 +313,15 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         }
 
         if (from == MatchStatus.SCHEDULED) {
-            return to == MatchStatus.IN_PLAY || to == MatchStatus.HALF_TIME ||
+            return to == MatchStatus.IN_PLAY || to == MatchStatus.PAUSED ||
                    to == MatchStatus.FINISHED;
         }
 
         if (from == MatchStatus.IN_PLAY) {
-            return to == MatchStatus.HALF_TIME || to == MatchStatus.FINISHED;
+            return to == MatchStatus.PAUSED || to == MatchStatus.FINISHED;
         }
 
-        if (from == MatchStatus.HALF_TIME) {
+        if (from == MatchStatus.PAUSED) {
             return to == MatchStatus.IN_PLAY || to == MatchStatus.FINISHED;
         }
 
@@ -363,7 +363,7 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         }
         if (status.contains("HT") || status.contains("HALF TIME") ||
             status.contains("HALFTIME")) {
-            return MatchStatus.HALF_TIME;
+            return MatchStatus.PAUSED;
         }
         if (status.contains("LIVE") || status.contains("'") ||
             status.matches(".*\\d+.*")) {
@@ -376,7 +376,7 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         // Check HALFTIME before FT to avoid matching "FT" in "HALFTIME"
         if (status.contains("HALFTIME") || status.contains("HALF TIME") ||
             status.contains("HT")) {
-            return MatchStatus.HALF_TIME;
+            return MatchStatus.PAUSED;
         }
         if (status.contains("FT") || status.contains("FINISHED") ||
             status.contains("FULL TIME")) {

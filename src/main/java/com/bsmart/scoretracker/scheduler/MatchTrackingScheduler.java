@@ -34,16 +34,16 @@ public class MatchTrackingScheduler {
             Thread.sleep(5000);
 
             LocalDateTime now = LocalDateTime.now();
-            LocalDateTime twoHoursAgo = now.minusHours(2);
+            LocalDateTime fourHoursAgo = now.minusHours(4);
             LocalDateTime oneHourFromNow = now.plusHours(1);
 
             // Find all SCHEDULED matches that might actually be in progress
             List<Match> potentiallyLiveMatches = matchRepository
                 .findByTrackingEnabledTrueAndStatusAndKickoffUtcBetween(
-                    MatchStatus.SCHEDULED, twoHoursAgo, oneHourFromNow);
+                    MatchStatus.SCHEDULED, fourHoursAgo, oneHourFromNow);
 
             log.info("Found {} SCHEDULED matches between {} and {} - scanning for live matches",
-                potentiallyLiveMatches.size(), twoHoursAgo, oneHourFromNow);
+                potentiallyLiveMatches.size(), fourHoursAgo, oneHourFromNow);
 
             for (Match match : potentiallyLiveMatches) {
                 try {
@@ -85,16 +85,16 @@ public class MatchTrackingScheduler {
     }
 
     /**
-     * Medium-frequency tracking: HALF_TIME matches (every 45 seconds)
+     * Medium-frequency tracking: PAUSED matches (every 45 seconds)
      */
     @Scheduled(fixedDelay = 45000, initialDelay = 10000)
     public void trackHalfTimeMatches() {
         log.debug("Running half-time match tracking cycle");
 
         List<Match> halfTimeMatches = matchRepository.findByTrackingEnabledTrueAndStatusIn(
-            Arrays.asList(MatchStatus.HALF_TIME));
+            Arrays.asList(MatchStatus.PAUSED));
 
-        log.info("Tracking {} HALF_TIME matches", halfTimeMatches.size());
+        log.info("Tracking {} PAUSED matches", halfTimeMatches.size());
 
         for (Match match : halfTimeMatches) {
             try {
@@ -108,7 +108,7 @@ public class MatchTrackingScheduler {
 
     /**
      * Low-frequency tracking: SCHEDULED matches near kickoff (every 60 seconds)
-     * Extended window: 2 hours before to 1 hour after current time
+     * Extended window: 4 hours before to 1 hour after current time
      * This catches matches that started but weren't detected yet
      */
     @Scheduled(fixedDelay = 60000, initialDelay = 15000)
@@ -116,15 +116,15 @@ public class MatchTrackingScheduler {
         log.debug("Running scheduled match tracking cycle (near kickoff)");
 
         LocalDateTime now = LocalDateTime.now();
-        LocalDateTime twoHoursAgo = now.minusHours(2); // EXTENDED from 10 minutes
+        LocalDateTime fourHoursAgo = now.minusHours(4); // EXTENDED from 2 hours
         LocalDateTime oneHourFromNow = now.plusHours(1);
 
         List<Match> scheduledMatches = matchRepository
             .findByTrackingEnabledTrueAndStatusAndKickoffUtcBetween(
-                MatchStatus.SCHEDULED, twoHoursAgo, oneHourFromNow);
+                MatchStatus.SCHEDULED, fourHoursAgo, oneHourFromNow);
 
         log.info("Tracking {} SCHEDULED matches near kickoff ({}h to +1h)",
-            scheduledMatches.size(), twoHoursAgo.getHour());
+            scheduledMatches.size(), fourHoursAgo.getHour());
 
         for (Match match : scheduledMatches) {
             try {

@@ -21,7 +21,7 @@
 <p th:unless="${match.scoreHome != null && match.scoreAway != null}" class="text-muted">Pas de score</p>
 <span th:if="${match.status.name() == 'IN_PLAY'}" class="badge bg-danger">EN COURS</span>
 <span th:if="${match.status.name() == 'FINISHED'}" class="badge bg-success">TERMINÉ</span>
-<span th:if="${match.status.name() == 'HALF_TIME'}" class="badge bg-warning">MI-TEMPS</span>
+<span th:if="${match.status.name() == 'PAUSED'}" class="badge bg-warning">PAUSE</span>
 <span th:if="${match.status.name() == 'SCHEDULED'}" class="badge bg-secondary">PROGRAMMÉ</span>
 </div>
 <div class="col-md-8">
@@ -29,6 +29,7 @@
 <p><strong>Compétition:</strong> <span th:text="${match.competitionName}">Competition</span></p>
 <p><strong>Coup d'envoi:</strong> <span th:text="${#temporals.format(match.kickoffUtc, 'dd/MM/yyyy HH:mm')}">Date</span> UTC</p>
 <p><strong>Provider:</strong> <span th:text="${match.provider}">Provider</span></p>
+<p><strong>URL:</strong> <a th:href="${match.matchUrl}" th:text="${match.matchUrl}" target="_blank">URL</a></p>
 <p><strong>Tracking:</strong> 
 <span th:if="${match.trackingEnabled}" class="badge bg-success">Activé</span>
 <span th:unless="${match.trackingEnabled}" class="badge bg-secondary">Désactivé</span>
@@ -36,9 +37,10 @@
 <p th:if="${match.minute}"><strong>Minute:</strong> <span th:text="${match.minute}">90'</span></p>
 <div class="mt-3">
 <form th:action="@{/admin/matches/{id}/refresh(id=${match.id})}" method="post" style="display:inline;" class="me-2">
-<button type="submit" class="btn btn-primary"><i class="bi bi-arrow-clockwise"></i> Rafraîchir</button>
+<button type="submit" class="btn btn-success"><i class="bi bi-arrow-clockwise"></i> Rafraîchir</button>
 </form>
-<a th:href="@{/admin/matches/{id}/edit(id=${match.id}, phaseId=${match.phaseId})}" class="btn btn-warning"><i class="bi bi-pencil"></i> Modifier</a>
+<a th:href="@{/admin/matches/{id}/manual-update(id=${match.id})}" class="btn btn-warning"><i class="bi bi-wrench"></i> Mise à jour manuelle</a>
+<a th:href="@{/admin/matches/{id}/edit(id=${match.id}, phaseId=${match.phaseId})}" class="btn btn-primary"><i class="bi bi-pencil"></i> Modifier</a>
 </div>
 </div>
 </div>

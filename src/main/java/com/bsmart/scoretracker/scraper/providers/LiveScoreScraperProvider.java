@@ -90,7 +90,7 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
                 // Check for half-time
                 if (minuteLower.contains("half") || minuteLower.contains("ht") ||
                     minuteLower.equals("45'") || minuteLower.equals("45'+")) {
-                    log.debug("Match is HALF_TIME based on minute: {}", minute);
+                    log.debug("Match is PAUSED based on minute: {}", minute);
                     return "HT";
                 }
 

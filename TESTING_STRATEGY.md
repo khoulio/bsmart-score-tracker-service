@@ -198,7 +198,7 @@ void testEventScheduledButMinuteShowsLive() {
 
 ### Ce qu'on teste :
 
-✅ **Scénario complet** : SCHEDULED → IN_PLAY → HALF_TIME → IN_PLAY → FINISHED
+✅ **Scénario complet** : SCHEDULED → IN_PLAY → PAUSED → IN_PLAY → FINISHED
 ✅ **Anti-flapping** : 3 confirmations requises
 ✅ **Protection pré-kickoff** : Ignore données avant le début
 ✅ **Auto-correction** : FINISHED → IN_PLAY si erreur détectée
@@ -327,7 +327,7 @@ mvn test -DexcludedGroups="contract"
   - Pas de rollback
 
 □ Mi-temps
-  - Status = HALF_TIME
+  - Status = PAUSED
   - halfTimeSeen = true
   - Scores conservés
 

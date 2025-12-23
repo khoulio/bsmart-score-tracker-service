@@ -52,7 +52,7 @@
 <td class="text-center">
 <span th:if="${match.status.name() == 'FINISHED'}" class="badge bg-success">Terminé</span>
 <span th:if="${match.status.name() == 'IN_PLAY'}" class="badge bg-danger">En cours</span>
-<span th:if="${match.status.name() == 'HALF_TIME'}" class="badge bg-warning">Mi-temps</span>
+<span th:if="${match.status.name() == 'PAUSED'}" class="badge bg-warning">Pause</span>
 <span th:if="${match.status.name() == 'SCHEDULED'}" class="badge bg-secondary">Programmé</span>
 </td>
 <td class="text-center">
@@ -66,10 +66,11 @@
 <td class="text-center">
 <div class="btn-group btn-group-sm">
 <a th:href="@{/admin/matches/{id}(id=${match.id})}" class="btn btn-outline-info" title="Détails"><i class="bi bi-eye"></i></a>
-<a th:href="@{/admin/matches/{id}/edit(id=${match.id}, phaseId=${match.phaseId})}" class="btn btn-outline-warning" title="Modifier"><i class="bi bi-pencil"></i></a>
+<a th:href="@{/admin/matches/{id}/edit(id=${match.id}, phaseId=${match.phaseId})}" class="btn btn-outline-primary" title="Modifier"><i class="bi bi-pencil"></i></a>
+<a th:href="@{/admin/matches/{id}/manual-update(id=${match.id})}" class="btn btn-outline-warning" title="Mise à jour manuelle"><i class="bi bi-wrench"></i></a>
 <form th:action="@{/admin/matches/{id}/refresh(id=${match.id})}" method="post" style="display:inline;">
 <input type="hidden" name="phaseId" th:value="${match.phaseId}">
-<button type="submit" class="btn btn-outline-primary btn-sm" title="Rafraîchir"><i class="bi bi-arrow-clockwise"></i></button>
+<button type="submit" class="btn btn-outline-success btn-sm" title="Rafraîchir"><i class="bi bi-arrow-clockwise"></i></button>
 </form>
 <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" th:data-bs-target="'#deleteModal' + ${match.id}" title="Supprimer"><i class="bi bi-trash"></i></button>
 </div>

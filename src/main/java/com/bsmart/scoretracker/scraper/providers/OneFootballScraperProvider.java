@@ -80,12 +80,12 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
             Integer homeScoreRaw = extractHomeScoreFromPage(wait, pageSource);
             Integer awayScoreRaw = extractAwayScoreFromPage(wait, pageSource);
 
-            // INVERT scores because OneFootball has them backwards
-            Integer homeScore = awayScoreRaw;  // Home = Away from JSON
-            Integer awayScore = homeScoreRaw;  // Away = Home from JSON
+            // Scores are no longer inverted from the source
+            Integer homeScore = homeScoreRaw;
+            Integer awayScore = awayScoreRaw;
 
-            log.debug("Extracted raw: home={}, away={} | Corrected: home={}, away={}",
-                homeScoreRaw, awayScoreRaw, homeScore, awayScore);
+            log.debug("Extracted raw: home={}, away={}",
+                homeScoreRaw, awayScoreRaw);
 
             // Extract status - pass minute to help determine correct status
             String status = extractStatusFromPage(wait, pageSource, minute);
@@ -123,8 +123,8 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
 
             // Check for half-time
             if (minuteLower.contains("half") || minuteLower.contains("ht") ||
-                minuteLower.contains("mi-temps") || minuteLower.equals("45'")) {
-                log.debug("Match is HALF_TIME based on minute: {}", minute);
+                minuteLower.contains("mi-temps")) {
+                log.debug("Match is PAUSED based on minute: {}", minute);
                 return "HT";
             }
 
@@ -162,7 +162,7 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
             }
 
             // Look for HalfTime - be specific in JSON
-            if (pageSource.contains("\"status\":\"HALF_TIME\"") ||
+            if (pageSource.contains("\"status\":\"PAUSED\"") ||
                 pageSource.contains("\"status\":\"HT\"") ||
                 pageSource.contains("\"timePeriod\":\"HT\"")) {
                 return "HT";
@@ -201,88 +201,44 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
     }
 
     private Integer extractHomeScoreFromPage(WebDriverWait wait, String pageSource) {
-        // Try multiple patterns for home score
-        String[] patterns = {
-            "\"homeTeam\"\\s*:\\s*\\{[^}]*\"score\"\\s*:\\s*\"([^\"]+)\"",
-            "\"homeTeam\"\\s*:\\s*\\{[^}]*\"score\"\\s*:\\s*([0-9]+)",
-            "homeTeam[^}]*score[^:]*:\\s*\"([^\"]+)\"",
-            "homeTeam[^}]*score[^:]*:\\s*([0-9]+)"
-        };
-
-        for (String patternStr : patterns) {
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(patternStr);
-            java.util.regex.Matcher matcher = pattern.matcher(pageSource);
-            if (matcher.find()) {
-                String score = matcher.group(1);
-                log.debug("Extracted home score '{}' using pattern: {}", score, patternStr);
-                if (!score.equals("-") && !score.isEmpty() && !score.equals("null")) {
-                    try {
-                        return Integer.parseInt(score);
-                    } catch (NumberFormatException e) {
-                        log.debug("Home score '{}' is not a number", score);
-                    }
-                }
-                return null; // Found the pattern but score is "-" or empty
-            }
-        }
-
-        // Try DOM elements as fallback
+        // PRIORITY 1: Try to find score from specific DOM element, which is more reliable
         try {
             WebElement scoreEl = webDriver.findElement(By.cssSelector("[data-testid='home-score']"));
             String text = scoreEl.getText().trim();
             if (!text.equals("-") && !text.isEmpty()) {
+                log.debug("Extracted home score '{}' from DOM element.", text);
                 return Integer.parseInt(text);
             }
         } catch (Exception e) {
-            log.debug("Could not extract home score from DOM: {}", e.getMessage());
+            log.debug("Could not extract home score from DOM element: {}", e.getMessage());
         }
 
+        // No fallback to regex, return null if DOM element is not found
+        log.warn("Home score not found using data-testid attribute.");
         return null;
     }
 
     private Integer extractAwayScoreFromPage(WebDriverWait wait, String pageSource) {
-        // Try multiple patterns for away score
-        String[] patterns = {
-            "\"awayTeam\"\\s*:\\s*\\{[^}]*\"score\"\\s*:\\s*\"([^\"]+)\"",
-            "\"awayTeam\"\\s*:\\s*\\{[^}]*\"score\"\\s*:\\s*([0-9]+)",
-            "awayTeam[^}]*score[^:]*:\\s*\"([^\"]+)\"",
-            "awayTeam[^}]*score[^:]*:\\s*([0-9]+)"
-        };
-
-        for (String patternStr : patterns) {
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(patternStr);
-            java.util.regex.Matcher matcher = pattern.matcher(pageSource);
-            if (matcher.find()) {
-                String score = matcher.group(1);
-                log.debug("Extracted away score '{}' using pattern: {}", score, patternStr);
-                if (!score.equals("-") && !score.isEmpty() && !score.equals("null")) {
-                    try {
-                        return Integer.parseInt(score);
-                    } catch (NumberFormatException e) {
-                        log.debug("Away score '{}' is not a number", score);
-                    }
-                }
-                return null; // Found the pattern but score is "-" or empty
-            }
-        }
-
-        // Try DOM elements as fallback
+        // PRIORITY 1: Try to find score from specific DOM element, which is more reliable
         try {
             WebElement scoreEl = webDriver.findElement(By.cssSelector("[data-testid='away-score']"));
             String text = scoreEl.getText().trim();
             if (!text.equals("-") && !text.isEmpty()) {
+                log.debug("Extracted away score '{}' from DOM element.", text);
                 return Integer.parseInt(text);
             }
         } catch (Exception e) {
-            log.debug("Could not extract away score from DOM: {}", e.getMessage());
+            log.debug("Could not extract away score from DOM element: {}", e.getMessage());
         }
 
+        // No fallback to regex, return null if DOM element is not found
+        log.warn("Away score not found using data-testid attribute.");
         return null;
     }
 
     private String extractMinuteFromPage(WebDriverWait wait, String pageSource) {
         // Try to extract minute from timePeriod in JSON
-        String minutePattern = "\"timePeriod\":\"([^\"]+)\"";
+        String minutePattern = "\"timePeriod\"\\s*:\\s*\"([^\"]+)\"";
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(minutePattern);
         java.util.regex.Matcher matcher = pattern.matcher(pageSource);
         if (matcher.find()) {

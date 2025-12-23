@@ -90,7 +90,7 @@ public class LiveScoreJsoupProvider implements MatchScraperProvider {
             // Normaliser le statut
             String rawStatus;
             if ("Half Time".equals(statusText)) {
-                rawStatus = "HALF_TIME";
+                rawStatus = "PAUSED";
             } else if ("Full Time".equals(statusText) || "FT".equals(statusText)) {
                 rawStatus = "FINISHED";
             } else if (statusText.contains("'")) {

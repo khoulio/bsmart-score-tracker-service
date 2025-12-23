@@ -46,10 +46,10 @@ class TrackingEngineLogicTest {
     }
 
     @Test
-    @DisplayName("OneFootball: 'HT' → HALF_TIME")
+    @DisplayName("OneFootball: 'HT' → PAUSED")
     void testNormalizeOneFootballHalfTimeStatus() {
         MatchStatus result = trackingEngine.normalizeStatus("HT", ProviderType.ONE_FOOTBALL);
-        assertEquals(MatchStatus.HALF_TIME, result);
+        assertEquals(MatchStatus.PAUSED, result);
     }
 
     @Test
@@ -74,10 +74,10 @@ class TrackingEngineLogicTest {
     }
 
     @Test
-    @DisplayName("LiveScore: 'HALFTIME' → HALF_TIME")
+    @DisplayName("LiveScore: 'HALFTIME' → PAUSED")
     void testNormalizeLiveScoreHalfTimeStatus() {
         MatchStatus result = trackingEngine.normalizeStatus("HALFTIME", ProviderType.LIVE_SCORE);
-        assertEquals(MatchStatus.HALF_TIME, result);
+        assertEquals(MatchStatus.PAUSED, result);
     }
 
     @Test
