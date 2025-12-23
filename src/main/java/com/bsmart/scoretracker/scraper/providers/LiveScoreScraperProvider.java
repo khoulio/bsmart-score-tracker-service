@@ -82,18 +82,19 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
             if (minute != null && !minute.isEmpty()) {
                 String minuteLower = minute.toLowerCase();
 
+                // Check for half-time (more specific, should come before full time)
+                if (minuteLower.equals("halftime") || minuteLower.equals("ht") ||
+                    minuteLower.equals("45'") || minuteLower.equals("45'+") ||
+                    minuteLower.contains("half-time") || minuteLower.contains("mi-temps")) {
+                    log.debug("Match is PAUSED based on minute: {}", minute);
+                    return "HT";
+                }
+
                 // Check for full time
                 if (minuteLower.contains("full time") || minuteLower.contains("ft") ||
                     minuteLower.contains("finished")) {
                     log.debug("Match is FINISHED based on minute: {}", minute);
                     return "FT";
-                }
-
-                // Check for half-time
-                if (minuteLower.contains("half") || minuteLower.contains("ht") ||
-                    minuteLower.equals("45'") || minuteLower.equals("45'+")) {
-                    log.debug("Match is PAUSED based on minute: {}", minute);
-                    return "HT";
                 }
 
                 // Check if it's a numeric minute (means match is LIVE)
