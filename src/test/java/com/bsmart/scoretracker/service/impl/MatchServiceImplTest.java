@@ -416,4 +416,32 @@ class MatchServiceImplTest {
         assertThrows(ResourceNotFoundException.class, () -> matchService.refreshMatch(999L));
         verify(trackingEngineService, never()).trackMatch(any());
     }
+
+    @Test
+    void testDeleteFinishedMatches_Success() {
+        // Given
+        Match finishedMatch = Match.builder()
+            .id(3L)
+            .phase(phase)
+            .homeTeam("Team A")
+            .awayTeam("Team B")
+            .kickoffUtc(LocalDateTime.now().minusDays(1))
+            .provider(ProviderType.ONE_FOOTBALL)
+            .matchUrl("https://onefootball.com/match/3")
+            .trackingEnabled(false)
+            .status(MatchStatus.FINISHED)
+            .errorCount(0)
+            .build();
+
+        List<Match> finishedMatches = Arrays.asList(finishedMatch);
+        when(matchRepository.findByStatus(MatchStatus.FINISHED)).thenReturn(finishedMatches);
+        doNothing().when(matchRepository).deleteAll(anyList());
+
+        // When
+        matchService.deleteFinishedMatches();
+
+        // Then
+        verify(matchRepository, times(1)).findByStatus(MatchStatus.FINISHED);
+        verify(matchRepository, times(1)).deleteAll(finishedMatches);
+    }
 }

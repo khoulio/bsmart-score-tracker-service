@@ -12,7 +12,33 @@
 <div>
 <h5 class="mb-0"><i class="bi bi-flag-fill text-primary"></i> <span th:text="${phase.competitionName}">Competition</span> - <span th:text="${phase.name}">Phase</span></h5>
 </div>
-<a th:href="@{/admin/matches/create(phaseId=${phaseId})}" class="btn btn-primary"><i class="bi bi-plus-circle"></i> Nouveau Match</a>
+<div>
+<a th:href="@{/admin/matches/create(phaseId=${phaseId})}" class="btn btn-primary me-2"><i class="bi bi-plus-circle"></i> Nouveau Match</a>
+<!-- Button to trigger the confirmation modal -->
+<button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#confirmCleanupModal">
+<i class="bi bi-trash"></i> Supprimer les matchs terminés
+</button>
+</div>
+</div>
+<!-- Confirmation Modal for cleaning up finished matches -->
+<div class="modal fade" id="confirmCleanupModal" tabindex="-1" aria-labelledby="confirmCleanupModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+<div class="modal-content">
+<div class="modal-header">
+<h5 class="modal-title" id="confirmCleanupModalLabel">Confirmer la suppression</h5>
+<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+<div class="modal-body">
+Êtes-vous sûr de vouloir supprimer TOUS les matchs terminés ? Cette action est irréversible.
+</div>
+<div class="modal-footer">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+<form th:action="@{/admin/matches/cleanup-finished}" method="post">
+<button type="submit" class="btn btn-danger"><i class="bi bi-trash"></i> Confirmer la suppression</button>
+</form>
+</div>
+</div>
+</div>
 </div>
 </div>
 </div>

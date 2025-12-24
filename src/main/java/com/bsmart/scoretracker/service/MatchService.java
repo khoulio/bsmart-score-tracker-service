@@ -1,6 +1,7 @@
 package com.bsmart.scoretracker.service;
 
 import com.bsmart.scoretracker.dto.MatchDTO;
+import com.bsmart.scoretracker.dto.external.WecanpronoMatchDTO;
 import com.bsmart.scoretracker.model.enums.MatchStatus;
 
 import java.util.List;
@@ -19,6 +20,8 @@ public interface MatchService {
 
     MatchDTO createMatch(MatchDTO dto);
 
+    MatchDTO createOrUpdateMatchFromWecanprono(WecanpronoMatchDTO dto);
+
     MatchDTO updateMatch(Long id, MatchDTO dto);
 
     void deleteMatch(Long id);
@@ -30,4 +33,6 @@ public interface MatchService {
     MatchDTO refreshMatch(Long id);
 
     MatchDTO manualUpdate(Long id, Integer scoreHome, Integer scoreAway, MatchStatus status, Integer scoreHomeTAB, Integer scoreAwayTAB);
+
+    void deleteFinishedMatches();
 }

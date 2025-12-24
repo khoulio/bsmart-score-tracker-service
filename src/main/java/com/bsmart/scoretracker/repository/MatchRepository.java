@@ -18,6 +18,8 @@ public interface MatchRepository extends JpaRepository<Match, Long> {
 
     Optional<Match> findByExternalId(Long externalId);
 
+    Optional<Match> findByMatchUrl(String matchUrl);
+
     Optional<Match> findByPhaseIdAndExternalId(Long phaseId, Long externalId);
 
     List<Match> findByStatus(MatchStatus status);

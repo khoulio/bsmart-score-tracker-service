@@ -2,6 +2,7 @@ package com.bsmart.scoretracker.controller.api;
 
 import com.bsmart.scoretracker.dto.MatchDTO;
 import com.bsmart.scoretracker.dto.MatchMetadata;
+import com.bsmart.scoretracker.dto.external.WecanpronoMatchDTO;
 import com.bsmart.scoretracker.model.enums.MatchStatus;
 import com.bsmart.scoretracker.service.MatchMetadataService;
 import com.bsmart.scoretracker.service.MatchService;
@@ -57,6 +58,14 @@ public class MatchController {
     public ResponseEntity<MatchDTO> createMatch(@Valid @RequestBody MatchDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED)
             .body(matchService.createMatch(dto));
+    }
+
+    @PostMapping("/wecanprono")
+    @Operation(summary = "Create or update match from Wecanprono",
+            description = "Allows Wecanprono to create or update a match using its own data structure. " +
+                          "The match is identified by the provider URL for updates.")
+    public ResponseEntity<MatchDTO> createOrUpdateMatchFromWecanprono(@Valid @RequestBody WecanpronoMatchDTO dto) {
+        return ResponseEntity.ok(matchService.createOrUpdateMatchFromWecanprono(dto));
     }
 
     @PutMapping("/{id}")

@@ -230,6 +230,19 @@ public class AdminMatchController {
         }
     }
 
+    @PostMapping("/cleanup-finished")
+    public String cleanupFinishedMatches(RedirectAttributes redirectAttributes) {
+        try {
+            matchService.deleteFinishedMatches();
+            redirectAttributes.addFlashAttribute("successMessage",
+                "Tous les matchs terminés ont été supprimés avec succès.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage",
+                "Erreur lors de la suppression des matchs terminés: " + e.getMessage());
+        }
+        return "redirect:/admin/matches";
+    }
+
     @PostMapping("/{id}/toggle-tracking")
     public String toggleTracking(@PathVariable Long id,
                                  @RequestParam Long phaseId,

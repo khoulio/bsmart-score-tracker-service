@@ -92,9 +92,6 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
             // Process score change (pass status to allow FINISHED corrections)
             processScoreChange(match, snapshot.getHome(), snapshot.getAway(), normalizedStatus);
 
-            // Detect half-time heuristics
-            detectHalfTime(match, normalizedStatus, snapshot.getMinute());
-
             matchRepository.save(match);
 
             log.info("SCRAPE_OK: Match {} - Status: {}, Score: {}:{}",
@@ -264,41 +261,6 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
             matchEventService.createEvent(match, EventType.SCORE_CHANGE,
                 null, null, oldHome, oldAway, newHome, newAway,
                 match.getMinute(), match.getRawStatus(), "SCHEDULER");
-        }
-    }
-
-    private void detectHalfTime(Match match, MatchStatus status, String minute) {
-        // Heuristic: If status is IN_PLAY and minute is around 45-47,
-        // and we haven't seen half-time yet, suggest PAUSED
-        if (status == MatchStatus.IN_PLAY && !match.getHalfTimeSeen()) {
-            if (minute != null && isHalfTimeMinute(minute)) {
-
-                log.info("Half-time detected heuristically for match {} at minute {}",
-                    match.getId(), minute);
-
-                // Suggest half-time via status change
-                processStatusChange(match, MatchStatus.PAUSED);
-                match.setHalfTimeSeen(true);
-            }
-        }
-
-        // Mark half-time as seen if we're in HALF_TIME status
-        if (status == MatchStatus.PAUSED || match.getStatus() == MatchStatus.PAUSED) {
-            match.setHalfTimeSeen(true);
-        }
-    }
-
-    private boolean isHalfTimeMinute(String minute) {
-        try {
-            // Remove any + signs (e.g., "45+2" -> "45")
-            String cleanMinute = minute.replaceAll("[^0-9]", "");
-            if (cleanMinute.isEmpty()) return false;
-
-            int min = Integer.parseInt(cleanMinute);
-            // Consider 45-47 as potential half-time
-            return min >= 45 && min <= 47;
-        } catch (NumberFormatException e) {
-            return false;
         }
     }
 

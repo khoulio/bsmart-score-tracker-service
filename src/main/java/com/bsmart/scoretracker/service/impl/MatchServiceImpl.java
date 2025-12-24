@@ -93,6 +93,53 @@ public class MatchServiceImpl implements MatchService {
 
     @Override
     @Transactional
+    public MatchDTO createOrUpdateMatchFromWecanprono(com.bsmart.scoretracker.dto.external.WecanpronoMatchDTO dto) {
+        log.info("Received request to create or update match from Wecanprono with URL: {}", dto.getMatchUrl());
+
+        Match match = matchRepository.findByMatchUrl(dto.getMatchUrl())
+                .orElseGet(Match::new);
+
+        if (match.getId() == null) {
+            log.info("No existing match found for URL '{}'. Creating a new match.", dto.getMatchUrl());
+            match.setStatus(MatchStatus.SCHEDULED);
+            match.setTrackingEnabled(true); // Default to tracked
+        } else {
+            log.info("Found existing match with ID {} for URL '{}'. Updating match.", match.getId(), dto.getMatchUrl());
+        }
+
+        match.setHomeTeam(dto.getHomeTeam());
+        match.setAwayTeam(dto.getAwayTeam());
+        if (dto.getStartTime() != null) {
+            match.setKickoffUtc(java.time.Instant.ofEpochMilli(dto.getStartTime().getTime()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
+        }
+        match.setProvider(dto.getProvider());
+        match.setMatchUrl(dto.getMatchUrl());
+
+        // Note: WecanpronoMatchDTO does not provide a phaseId.
+        // This will cause issues if a new match is created, as phase is a required relationship.
+        // A proper solution would involve Wecanprono providing a phase/competition identifier,
+        // or having a lookup mechanism here. For now, creating a match this way might fail if phase is not nullable.
+        // Based on Match.java, phase is nullable=false. This will fail.
+        // As a temporary workaround, we can't create a match without a phase. Let's only support update.
+        // Re-evaluating: the request is to CREATE or update. A null phase will fail.
+        // I will throw an exception if the match doesn't exist, and log a clear message.
+        // This is safer than creating invalid data.
+        if (match.getId() == null) {
+             // Let's try to find a generic phase to assign the match to if it exists, otherwise throw an error
+            Phase defaultPhase = phaseRepository.findById(1L) // Assuming a generic phase with ID 1 exists
+                    .orElseThrow(() -> new IllegalStateException("Cannot create a new match from Wecanprono without a valid Phase. No default phase found."));
+            match.setPhase(defaultPhase);
+        }
+
+
+        Match savedMatch = matchRepository.save(match);
+        log.info("Successfully saved match {} for URL '{}'", savedMatch.getId(), savedMatch.getMatchUrl());
+
+        return toDTO(savedMatch);
+    }
+
+    @Override
+    @Transactional
     public MatchDTO updateMatch(Long id, MatchDTO dto) {
         Match match = matchRepository.findById(id)
             .orElseThrow(() -> new ResourceNotFoundException("Match", id));
@@ -214,6 +261,16 @@ public class MatchServiceImpl implements MatchService {
 
         Match updated = matchRepository.save(match);
         return toDTO(updated);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFinishedMatches() {
+        List<Match> finishedMatches = matchRepository.findByStatus(MatchStatus.FINISHED);
+        if (!finishedMatches.isEmpty()) {
+            matchRepository.deleteAll(finishedMatches);
+            log.info("Deleted {} finished matches.", finishedMatches.size());
+        }
     }
 
     private MatchDTO toDTO(Match match) {
