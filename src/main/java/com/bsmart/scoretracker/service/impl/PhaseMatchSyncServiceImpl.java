@@ -33,83 +33,10 @@ public class PhaseMatchSyncServiceImpl implements PhaseMatchSyncService {
     private final PhaseRepository phaseRepository;
     private final MatchRepository matchRepository;
 
-    @Override
-    public List<ExternalPhaseDTO> fetchExternalPhasesWithMatches(Long competitionId) {
-        Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found: " + competitionId));
 
-        if (competition.getExternalId() == null) {
-            log.warn("Competition {} has no externalId, cannot fetch external phases", competitionId);
-            return List.of();
-        }
 
-        return matchApiClient.fetchPhasesWithMatches(competition.getExternalId());
-    }
 
-    @Override
-    @Transactional
-    public int synchronizePhasesAndMatchesForCompetition(Long competitionId) {
-        log.info("Starting synchronization of phases and matches for competition {}", competitionId);
 
-        Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found: " + competitionId));
-
-        if (competition.getExternalId() == null) {
-            log.warn("Competition {} has no externalId, skipping sync", competitionId);
-            return 0;
-        }
-
-        List<ExternalPhaseDTO> externalPhases = matchApiClient.fetchPhasesWithMatches(competition.getExternalId());
-        if (externalPhases.isEmpty()) {
-            log.warn("No external phases found for competition {}", competitionId);
-            return 0;
-        }
-
-        int syncedCount = 0;
-        for (ExternalPhaseDTO externalPhase : externalPhases) {
-            try {
-                syncPhase(competition, externalPhase);
-                syncedCount++;
-            } catch (Exception e) {
-                log.error("Error syncing phase {} for competition {}: {}",
-                        externalPhase.getId(), competitionId, e.getMessage(), e);
-            }
-        }
-
-        log.info("Successfully synchronized {} phases for competition {}", syncedCount, competitionId);
-        return syncedCount;
-    }
-
-    @Override
-    @Transactional
-    public boolean synchronizePhase(Long competitionId, Long externalPhaseId) {
-        log.info("Synchronizing phase {} for competition {}", externalPhaseId, competitionId);
-
-        Competition competition = competitionRepository.findById(competitionId)
-                .orElseThrow(() -> new IllegalArgumentException("Competition not found: " + competitionId));
-
-        if (competition.getExternalId() == null) {
-            log.warn("Competition {} has no externalId", competitionId);
-            return false;
-        }
-
-        ExternalPhaseDTO externalPhase = matchApiClient.fetchPhaseWithMatches(
-                competition.getExternalId(), externalPhaseId);
-
-        if (externalPhase == null) {
-            log.warn("External phase {} not found", externalPhaseId);
-            return false;
-        }
-
-        try {
-            syncPhase(competition, externalPhase);
-            log.info("Successfully synchronized phase {}", externalPhaseId);
-            return true;
-        } catch (Exception e) {
-            log.error("Error syncing phase {}: {}", externalPhaseId, e.getMessage(), e);
-            return false;
-        }
-    }
 
     @Override
     @Transactional
@@ -121,14 +48,7 @@ public class PhaseMatchSyncServiceImpl implements PhaseMatchSyncService {
                 .toList();
 
         int totalSynced = 0;
-        for (Competition competition : syncedCompetitions) {
-            try {
-                int synced = synchronizePhasesAndMatchesForCompetition(competition.getId());
-                totalSynced += synced;
-            } catch (Exception e) {
-                log.error("Error syncing competition {}: {}", competition.getId(), e.getMessage());
-            }
-        }
+
 
         log.info("Total phases synchronized across all competitions: {}", totalSynced);
         return totalSynced;

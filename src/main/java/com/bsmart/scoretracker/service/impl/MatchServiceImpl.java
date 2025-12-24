@@ -114,6 +114,7 @@ public class MatchServiceImpl implements MatchService {
         }
         match.setProvider(dto.getProvider());
         match.setMatchUrl(dto.getMatchUrl());
+        match.setExternalId(dto.getExternalId());
 
         // Note: WecanpronoMatchDTO does not provide a phaseId.
         // This will cause issues if a new match is created, as phase is a required relationship.

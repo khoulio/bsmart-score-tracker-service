@@ -60,18 +60,5 @@ public class WecanpronoMatchApiClient {
         }
     }
 
-    /**
-     * Récupère une phase spécifique avec ses matches
-     *
-     * @param competitionId ID de la compétition externe
-     * @param phaseId ID de la phase externe
-     * @return La phase trouvée ou null
-     */
-    public ExternalPhaseDTO fetchPhaseWithMatches(Long competitionId, Long phaseId) {
-        List<ExternalPhaseDTO> phases = fetchPhasesWithMatches(competitionId);
-        return phases.stream()
-                .filter(phase -> phase.getId().equals(phaseId))
-                .findFirst()
-                .orElse(null);
-    }
+
 }

@@ -8,6 +8,9 @@ import java.util.Date;
 
 public class WecanpronoMatchDTO {
 
+    @JsonProperty("external_id")
+    private Long externalId;
+
     @JsonProperty("home_team")
     private String homeTeam;
 
@@ -62,5 +65,13 @@ public class WecanpronoMatchDTO {
 
     public void setMatchUrl(String matchUrl) {
         this.matchUrl = matchUrl;
+    }
+
+    public Long getExternalId() {
+        return externalId;
+    }
+
+    public void setExternalId(Long externalId) {
+        this.externalId = externalId;
     }
 }
