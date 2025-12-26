@@ -6,6 +6,7 @@ import com.bsmart.scoretracker.model.enums.ProviderType;
 import com.bsmart.scoretracker.scraper.MatchScraperProvider;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import jakarta.inject.Provider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -25,7 +26,7 @@ import java.time.Duration;
 @Slf4j
 public class OneFootballScraperProvider implements MatchScraperProvider {
 
-    private final WebDriver webDriver;
+    private final Provider<WebDriver> webDriverProvider;
 
     @Override
     public ProviderType supports() {
@@ -37,6 +38,7 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
     @RateLimiter(name = "oneFootballScraper")
     public MatchSnapshot fetch(String url) {
         log.info("Scraping OneFootball: {}", url);
+        WebDriver webDriver = webDriverProvider.get();
 
         try {
             webDriver.get(url);
@@ -76,21 +78,14 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
             }
 
             // Extract minute FIRST - this is key to determine if match is live
-            String minute = extractMinuteFromPage(wait, pageSource);
+            String minute = extractMinuteFromPage(webDriver, pageSource);
 
-            // Extract scores - NOTE: OneFootball seems to have them inverted!
-            Integer homeScoreRaw = extractHomeScoreFromPage(wait, pageSource);
-            Integer awayScoreRaw = extractAwayScoreFromPage(wait, pageSource);
-
-            // Scores are no longer inverted from the source
-            Integer homeScore = homeScoreRaw;
-            Integer awayScore = awayScoreRaw;
-
-            log.debug("Extracted raw: home={}, away={}",
-                homeScoreRaw, awayScoreRaw);
+            // Extract scores
+            Integer homeScore = extractHomeScoreFromPage(webDriver, pageSource);
+            Integer awayScore = extractAwayScoreFromPage(webDriver, pageSource);
 
             // Extract status - pass minute to help determine correct status
-            String status = extractStatusFromPage(wait, pageSource, minute);
+            String status = extractStatusFromPage(webDriver, pageSource, minute);
 
             log.info("OneFootball scrape result - Status: {}, Score: {}-{}, Minute: {}",
                 status, homeScore, awayScore, minute);
@@ -107,10 +102,15 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
         } catch (Exception e) {
             log.error("Failed to scrape OneFootball: {}", e.getMessage(), e);
             throw new ScraperException("OneFootball scraping failed: " + e.getMessage(), e);
+        } finally {
+            if (webDriver != null) {
+                webDriver.quit();
+            }
         }
     }
 
-    private String extractStatusFromPage(WebDriverWait wait, String pageSource, String minute) {
+    private String extractStatusFromPage(WebDriver webDriver, String pageSource, String minute) {
+        // ... (implementation remains the same, but uses local webDriver instance)
         // IMPORTANT: If we have a valid minute, the match is IN PROGRESS!
         if (minute != null && !minute.isEmpty()) {
             String minuteLower = minute.toLowerCase();
@@ -202,7 +202,7 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
         return "SCHEDULED";
     }
 
-    private Integer extractHomeScoreFromPage(WebDriverWait wait, String pageSource) {
+    private Integer extractHomeScoreFromPage(WebDriver webDriver, String pageSource) {
         // PRIORITY 1: Try to find score from specific DOM element, which is more reliable
         try {
             WebElement scoreEl = webDriver.findElement(By.cssSelector("[data-testid='home-score']"));
@@ -220,7 +220,7 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
         return null;
     }
 
-    private Integer extractAwayScoreFromPage(WebDriverWait wait, String pageSource) {
+    private Integer extractAwayScoreFromPage(WebDriver webDriver, String pageSource) {
         // PRIORITY 1: Try to find score from specific DOM element, which is more reliable
         try {
             WebElement scoreEl = webDriver.findElement(By.cssSelector("[data-testid='away-score']"));
@@ -238,7 +238,7 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
         return null;
     }
 
-    private String extractMinuteFromPage(WebDriverWait wait, String pageSource) {
+    private String extractMinuteFromPage(WebDriver webDriver, String pageSource) {
         // Try to extract minute from timePeriod in JSON
         String minutePattern = "\"timePeriod\"\\s*:\\s*\"([^\"]+)\"";
         java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(minutePattern);
@@ -247,6 +247,7 @@ public class OneFootballScraperProvider implements MatchScraperProvider {
             String minute = matcher.group(1);
             if (!minute.isEmpty() && !minute.equals("null")) {
                 return minute;
+
             }
         }
 

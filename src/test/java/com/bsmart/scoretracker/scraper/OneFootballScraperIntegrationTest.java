@@ -37,7 +37,9 @@ class OneFootballScraperIntegrationTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        scraper = new OneFootballScraperProvider(webDriver);
+        // Wrap the mock WebDriver in a Provider and mock the quit() method
+        scraper = new OneFootballScraperProvider(() -> webDriver);
+        doNothing().when(webDriver).quit();
     }
 
     @Disabled("Test obsolète car la logique de scraping n'utilise plus la regex sur les fixtures")

@@ -36,7 +36,10 @@ class LiveScoreScraperIntegrationTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        scraper = new LiveScoreScraperProvider(webDriver);
+        // Wrap the mock WebDriver in a Provider
+        scraper = new LiveScoreScraperProvider(() -> webDriver);
+        // Mock the quit() method to do nothing, as it will be called in the finally block
+        doNothing().when(webDriver).quit();
     }
 
     @Test

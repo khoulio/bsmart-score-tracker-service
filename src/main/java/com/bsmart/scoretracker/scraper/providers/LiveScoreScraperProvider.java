@@ -6,6 +6,7 @@ import com.bsmart.scoretracker.model.enums.ProviderType;
 import com.bsmart.scoretracker.scraper.MatchScraperProvider;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import jakarta.inject.Provider;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.openqa.selenium.By;
@@ -25,7 +26,7 @@ import java.time.Duration;
 @Component
 public class LiveScoreScraperProvider implements MatchScraperProvider {
 
-    private final WebDriver webDriver;
+    private final Provider<WebDriver> webDriverProvider;
 
     @Override
     public ProviderType supports() {
@@ -37,6 +38,7 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
     @RateLimiter(name = "liveScoreScraper")
     public MatchSnapshot fetch(String url) {
         log.info("Scraping LiveScore: {}", url);
+        WebDriver webDriver = webDriverProvider.get();
 
         try {
             webDriver.get(url);
@@ -72,6 +74,10 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
         } catch (Exception e) {
             log.error("Failed to scrape LiveScore: {}", e.getMessage(), e);
             throw new ScraperException("LiveScore scraping failed: " + e.getMessage(), e);
+        } finally {
+            if (webDriver != null) {
+                webDriver.quit();
+            }
         }
     }
 
@@ -84,7 +90,6 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
 
                 // Check for half-time (more specific, should come before full time)
                 if (minuteLower.equals("halftime") || minuteLower.equals("ht") ||
-                    minuteLower.equals("45'") || minuteLower.equals("45'+") ||
                     minuteLower.contains("half-time") || minuteLower.contains("mi-temps")) {
                     log.debug("Match is PAUSED based on minute: {}", minute);
                     return "HT";
