@@ -96,7 +96,7 @@ public class MatchServiceImpl implements MatchService {
     public MatchDTO createOrUpdateMatchFromWecanprono(com.bsmart.scoretracker.dto.external.WecanpronoMatchDTO dto) {
         log.info("Received request to create or update match from Wecanprono with URL: {}", dto.getMatchUrl());
 
-        Match match = matchRepository.findByMatchUrl(dto.getMatchUrl())
+        Match match = matchRepository.findByExternalId(dto.getExternalId())
                 .orElseGet(Match::new);
 
         if (match.getId() == null) {

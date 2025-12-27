@@ -1,0 +1,603 @@
+{
+	"info": {
+		"_postman_id": "score-tracker-collection-001",
+		"name": "BSmart Score Tracker API",
+		"description": "Collection complète pour l'API BSmart Score Tracker Service",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Competitions",
+			"item": [
+				{
+					"name": "Get All Competitions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/competitions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "competitions"]
+						}
+					}
+				},
+				{
+					"name": "Get Competition by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/competitions/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "competitions", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Competition ID"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Competition",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Ligue 1\",\n  \"country\": \"France\",\n  \"season\": \"2024/2025\",\n  \"logoUrl\": \"https://example.com/logo.png\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/competitions",
+							"host": ["{{base_url}}"],
+							"path": ["api", "competitions"]
+						}
+					}
+				},
+				{
+					"name": "Update Competition",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Ligue 1 Updated\",\n  \"country\": \"France\",\n  \"season\": \"2024/2025\",\n  \"logoUrl\": \"https://example.com/logo-new.png\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/competitions/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "competitions", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Competition",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/competitions/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "competitions", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "CRUD operations for competitions"
+		},
+		{
+			"name": "2. Phases",
+			"item": [
+				{
+					"name": "Get All Phases",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/phases",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases"]
+						}
+					}
+				},
+				{
+					"name": "Get Phases by Competition",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/phases?competitionId=:competitionId",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": ":competitionId",
+									"description": "Competition ID to filter phases"
+								}
+							],
+							"variable": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Phase by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/phases/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Phase",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"competitionId\": 1,\n  \"name\": \"Group Stage\",\n  \"startDate\": \"2024-09-01\",\n  \"endDate\": \"2024-12-20\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/phases",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases"]
+						}
+					}
+				},
+				{
+					"name": "Update Phase",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"competitionId\": 1,\n  \"name\": \"Group Stage - Updated\",\n  \"startDate\": \"2024-09-01\",\n  \"endDate\": \"2024-12-31\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/phases/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Phase",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/phases/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "CRUD operations for phases"
+		},
+		{
+			"name": "3. Matches",
+			"item": [
+				{
+					"name": "Get All Matches",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches"]
+						}
+					}
+				},
+				{
+					"name": "Get Matches by Phase",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1",
+									"description": "Phase ID to filter matches"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Matches by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches?status=IN_PLAY",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches"],
+							"query": [
+								{
+									"key": "status",
+									"value": "IN_PLAY",
+									"description": "Status: SCHEDULED, IN_PLAY, PAUSED, FINISHED"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Match by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Get Match by External ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/external/:externalId",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", "external", ":externalId"],
+							"variable": [
+								{
+									"key": "externalId",
+									"value": "12345",
+									"description": "Wecanprono rencontre_id"
+								}
+							]
+						},
+						"description": "Récupérer un match par son ID externe (rencontre_id de Wecanprono)"
+					}
+				},
+				{
+					"name": "Create Match",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phaseId\": 1,\n  \"homeTeam\": \"PSG\",\n  \"awayTeam\": \"Marseille\",\n  \"kickoffUtc\": \"2024-12-26T20:00:00Z\",\n  \"venue\": \"Parc des Princes\",\n  \"provider\": \"ONE_FOOTBALL\",\n  \"matchUrl\": \"https://onefootball.com/match/123456\",\n  \"trackingEnabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/matches",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches"]
+						}
+					}
+				},
+				{
+					"name": "Create/Update Match from Wecanprono",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"externalId\": 12345,\n  \"homeTeam\": \"PSG\",\n  \"awayTeam\": \"Marseille\",\n  \"kickoffUtc\": \"2024-12-26T20:00:00Z\",\n  \"venue\": \"Parc des Princes\",\n  \"provider\": \"LIVE_SCORE\",\n  \"matchUrl\": \"https://livescore.com/match/123456\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/matches/wecanprono",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", "wecanprono"]
+						},
+						"description": "Endpoint pour Wecanprono pour créer/mettre à jour un match"
+					}
+				},
+				{
+					"name": "Update Match",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"phaseId\": 1,\n  \"homeTeam\": \"PSG\",\n  \"awayTeam\": \"Marseille\",\n  \"kickoffUtc\": \"2024-12-26T21:00:00Z\",\n  \"venue\": \"Parc des Princes\",\n  \"provider\": \"ONE_FOOTBALL\",\n  \"matchUrl\": \"https://onefootball.com/match/123456\",\n  \"trackingEnabled\": true\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/matches/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Match",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/:id",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Enable Tracking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/:id/track/enable",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":id", "track", "enable"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Activer le tracking automatique pour ce match"
+					}
+				},
+				{
+					"name": "Disable Tracking",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/:id/track/disable",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":id", "track", "disable"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Désactiver le tracking automatique pour ce match"
+					}
+				},
+				{
+					"name": "Refresh Match (Force)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/:id/refresh",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":id", "refresh"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						},
+						"description": "Forcer le rafraîchissement immédiat des données du match"
+					}
+				},
+				{
+					"name": "Extract Metadata from URL",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/extract-metadata?url=https://onefootball.com/match/12345",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", "extract-metadata"],
+							"query": [
+								{
+									"key": "url",
+									"value": "https://onefootball.com/match/12345",
+									"description": "OneFootball match URL"
+								}
+							]
+						},
+						"description": "Extraire automatiquement les métadonnées d'un match depuis une URL OneFootball"
+					}
+				}
+			],
+			"description": "CRUD and tracking operations for matches"
+		},
+		{
+			"name": "4. Match Events",
+			"item": [
+				{
+					"name": "Get Match Events",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/matches/:matchId/events",
+							"host": ["{{base_url}}"],
+							"path": ["api", "matches", ":matchId", "events"],
+							"variable": [
+								{
+									"key": "matchId",
+									"value": "1",
+									"description": "Match ID"
+								}
+							]
+						},
+						"description": "Récupérer tous les événements d'audit d'un match (changements de score, statut, etc.)"
+					}
+				}
+			],
+			"description": "Match event audit trail"
+		},
+		{
+			"name": "5. Sync - Competitions",
+			"item": [
+				{
+					"name": "Sync All Competitions",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sync/competitions/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sync", "competitions", "all"]
+						},
+						"description": "Synchroniser toutes les compétitions depuis Wecanprono"
+					}
+				},
+				{
+					"name": "Sync Single Competition",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sync/competitions/:externalId",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sync", "competitions", ":externalId"],
+							"variable": [
+								{
+									"key": "externalId",
+									"value": "1",
+									"description": "External Competition ID from Wecanprono"
+								}
+							]
+						},
+						"description": "Synchroniser une compétition spécifique depuis Wecanprono"
+					}
+				},
+				{
+					"name": "Fetch External Competitions (No Sync)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sync/competitions/external",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sync", "competitions", "external"]
+						},
+						"description": "Récupérer les compétitions depuis l'API externe sans les synchroniser"
+					}
+				}
+			],
+			"description": "Synchronization with Wecanprono service for competitions"
+		},
+		{
+			"name": "6. Sync - Phases & Matches",
+			"item": [
+				{
+					"name": "Sync All Phases & Matches",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/sync/phases-matches/all",
+							"host": ["{{base_url}}"],
+							"path": ["api", "sync", "phases-matches", "all"]
+						},
+						"description": "Synchroniser toutes les phases et matches depuis Wecanprono"
+					}
+				}
+			],
+			"description": "Synchronization with Wecanprono service for phases and matches"
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:9093",
+			"type": "string"
+		}
+	]
+}

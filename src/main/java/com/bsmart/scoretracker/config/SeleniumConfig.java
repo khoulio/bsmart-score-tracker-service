@@ -60,11 +60,17 @@ public class SeleniumConfig {
     private ChromeOptions buildChromeOptions() {
         ChromeOptions options = new ChromeOptions();
 
-        // Si tu veux forcer un binaire Chrome en LOCAL uniquement
-        String chromeBin = System.getenv("CHROME_BIN");
-        if (chromeBin != null && !chromeBin.isEmpty()) {
-            options.setBinary(chromeBin);
-            log.info("Using Chrome binary: {}", chromeBin);
+        // ⚠️ IMPORTANT: Ne PAS définir le binaire Chrome en mode REMOTE
+        // Selenium Grid a déjà Chrome installé et gère ça automatiquement
+        // On définit le binaire UNIQUEMENT en mode LOCAL
+        if ("local".equalsIgnoreCase(mode)) {
+            String chromeBin = System.getenv("CHROME_BIN");
+            if (chromeBin != null && !chromeBin.isEmpty()) {
+                options.setBinary(chromeBin);
+                log.info("Using LOCAL Chrome binary: {}", chromeBin);
+            }
+        } else {
+            log.info("REMOTE mode: Selenium Grid will use its own Chrome installation");
         }
 
         if (headless) {
