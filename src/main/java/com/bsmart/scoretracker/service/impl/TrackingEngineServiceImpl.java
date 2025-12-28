@@ -92,10 +92,21 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
             // Process score change (pass status to allow FINISHED corrections)
             processScoreChange(match, snapshot.getHome(), snapshot.getAway(), normalizedStatus);
 
+            // Process penalty score change if present
+            if (snapshot.getPenaltyHome() != null && snapshot.getPenaltyAway() != null) {
+                processPenaltyScoreChange(match, snapshot.getPenaltyHome(), snapshot.getPenaltyAway());
+            }
+
             matchRepository.save(match);
 
-            log.info("SCRAPE_OK: Match {} - Status: {}, Score: {}:{}",
-                match.getId(), normalizedStatus, snapshot.getHome(), snapshot.getAway());
+            if (snapshot.getPenaltyHome() != null && snapshot.getPenaltyAway() != null) {
+                log.info("SCRAPE_OK: Match {} - Status: {}, Score: {}:{}, Penalties: {}:{}",
+                    match.getId(), normalizedStatus, snapshot.getHome(), snapshot.getAway(),
+                    snapshot.getPenaltyHome(), snapshot.getPenaltyAway());
+            } else {
+                log.info("SCRAPE_OK: Match {} - Status: {}, Score: {}:{}",
+                    match.getId(), normalizedStatus, snapshot.getHome(), snapshot.getAway());
+            }
 
         } catch (ScraperException e) {
             handleScrapeFailed(match, e.getMessage());
@@ -154,6 +165,23 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         if (!isValidTransition(currentStatus, newStatus)) {
             log.warn("Invalid status transition: {} -> {} for match {}",
                 currentStatus, newStatus, match.getId());
+            return;
+        }
+
+        // STRONG PROOF: Bypass anti-flapping if we have minute (strong evidence match started)
+        // This allows immediate SCHEDULED->IN_PLAY transition when minute is detected
+        boolean hasStrongProofMatchStarted =
+            currentStatus == MatchStatus.SCHEDULED &&
+            newStatus == MatchStatus.IN_PLAY &&
+            match.getMinute() != null &&
+            !match.getMinute().isEmpty() &&
+            match.getMinute().matches(".*\\d+.*"); // Contains a number
+
+        if (hasStrongProofMatchStarted) {
+            log.info("STRONG PROOF detected for match {} - Minute: '{}'. Bypassing anti-flapping for immediate IN_PLAY transition.",
+                match.getId(), match.getMinute());
+
+            applyStatusChange(match, newStatus);
             return;
         }
 
@@ -264,6 +292,35 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         }
     }
 
+    private void processPenaltyScoreChange(Match match, Integer newPenaltyHome, Integer newPenaltyAway) {
+        Integer oldPenaltyHome = match.getScoreHomeTAB();
+        Integer oldPenaltyAway = match.getScoreAwayTAB();
+
+        // Check if penalty scores changed
+        boolean penaltyHomeChanged = !Objects.equals(oldPenaltyHome, newPenaltyHome);
+        boolean penaltyAwayChanged = !Objects.equals(oldPenaltyAway, newPenaltyAway);
+
+        if (penaltyHomeChanged || penaltyAwayChanged) {
+            match.setScoreHomeTAB(newPenaltyHome);
+            match.setScoreAwayTAB(newPenaltyAway);
+
+            // Update penalty winners if regular time was a draw
+            if (match.getScoreHome() != null && match.getScoreAway() != null &&
+                match.getScoreHome().equals(match.getScoreAway())) {
+                match.setWinnerHomeTAB(newPenaltyHome > newPenaltyAway);
+                match.setWinnerAwayTAB(newPenaltyAway > newPenaltyHome);
+            }
+
+            log.info("Penalty scores changed for match {}: {}:{} -> {}:{}",
+                match.getId(), oldPenaltyHome, oldPenaltyAway, newPenaltyHome, newPenaltyAway);
+
+            // Create audit event for penalty score change
+            matchEventService.createEvent(match, EventType.SCORE_CHANGE,
+                null, null, oldPenaltyHome, oldPenaltyAway, newPenaltyHome, newPenaltyAway,
+                match.getMinute(), match.getRawStatus(), "PENALTY_SHOOTOUT");
+        }
+    }
+
     private boolean isValidTransition(MatchStatus from, MatchStatus to) {
         // SCHEDULED -> IN_PLAY, PAUSED, FINISHED (tolerated: started late)
         // IN_PLAY -> PAUSED, FINISHED
@@ -339,6 +396,16 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         if (status.contains("HALFTIME") || status.contains("HALF TIME") ||
             status.contains("HT")) {
             return MatchStatus.PAUSED;
+        }
+        if (status.contains("AET") || status.contains("AFTER EXTRA TIME")) {
+            return MatchStatus.FINISHED;
+        }
+        if (status.contains("EXTRA TIME") || status.matches(".*\\bET\\b.*")) {
+            return MatchStatus.IN_PLAY;
+        }
+        // Check for penalty shootout (still IN_PLAY/LIVE during penalties)
+        if (status.contains("PEN") || status.contains("PENALTIES")) {
+            return MatchStatus.IN_PLAY;
         }
         if (status.contains("FT") || status.contains("FINISHED") ||
             status.contains("FULL TIME")) {

@@ -63,9 +63,10 @@ public class MatchTrackingScheduler {
     }
 
     /**
-     * High-frequency tracking: IN_PLAY matches (every 15 seconds)
+     * High-frequency tracking: IN_PLAY matches (every 10 seconds)
+     * OPTIMIZED: Reduced from 15s to 10s for faster goal detection
      */
-    @Scheduled(fixedDelay = 15000, initialDelay = 5000)
+    @Scheduled(fixedDelay = 10000, initialDelay = 5000)
     public void trackLiveMatches() {
         log.debug("Running live match tracking cycle");
 
@@ -107,11 +108,12 @@ public class MatchTrackingScheduler {
     }
 
     /**
-     * Low-frequency tracking: SCHEDULED matches near kickoff (every 60 seconds)
+     * Medium-frequency tracking: SCHEDULED matches near kickoff (every 30 seconds)
      * Extended window: 4 hours before to 1 hour after current time
      * This catches matches that started but weren't detected yet
+     * OPTIMIZED: Reduced from 60s to 30s for faster detection of match start
      */
-    @Scheduled(fixedDelay = 60000, initialDelay = 15000)
+    @Scheduled(fixedDelay = 30000, initialDelay = 15000)
     public void trackScheduledMatchesNearKickoff() {
         log.debug("Running scheduled match tracking cycle (near kickoff)");
 

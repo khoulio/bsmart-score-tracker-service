@@ -58,9 +58,16 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
             String status = extractStatusFromPage(pageSource, minute);
             Integer homeScore = extractHomeScoreFromPage(pageSource);
             Integer awayScore = extractAwayScoreFromPage(pageSource);
+            Integer penaltyHomeScore = extractPenaltyHomeScoreFromPage(pageSource);
+            Integer penaltyAwayScore = extractPenaltyAwayScoreFromPage(pageSource);
 
-            log.info("LiveScore scrape result - Status: {}, Score: {}-{}, Minute: {}",
-                status, homeScore, awayScore, minute);
+            if (penaltyHomeScore != null && penaltyAwayScore != null) {
+                log.info("LiveScore scrape result - Status: {}, Score: {}-{}, Penalties: {}-{}, Minute: {}",
+                    status, homeScore, awayScore, penaltyHomeScore, penaltyAwayScore, minute);
+            } else {
+                log.info("LiveScore scrape result - Status: {}, Score: {}-{}, Minute: {}",
+                    status, homeScore, awayScore, minute);
+            }
 
             return MatchSnapshot.builder()
                 .status(status)
@@ -69,6 +76,8 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
                 .minute(minute)
                 .rawStatus(status)
                 .found(true)
+                .penaltyHome(penaltyHomeScore)
+                .penaltyAway(penaltyAwayScore)
                 .build();
 
         } catch (Exception e) {
@@ -95,7 +104,23 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
                     return "HT";
                 }
 
+                // Check for penalty shootout (still LIVE/IN_PLAY)
+                if (minuteLower.equals("pen") || minuteLower.contains("penalties")) {
+                    log.debug("Match is IN PENALTY SHOOTOUT (still LIVE) based on minute: {}", minute);
+                    return "LIVE";
+                }
+
                 // Check for full time
+                if (minuteLower.equals("aet") || minuteLower.contains("after extra time")) {
+                    log.debug("Match is FINISHED (after extra time) based on minute: {}", minute);
+                    return "FT";
+                }
+
+                if (minuteLower.equals("et") || minuteLower.contains("extra time")) {
+                    log.debug("Match is IN EXTRA TIME (still LIVE) based on minute: {}", minute);
+                    return "LIVE";
+                }
+
                 if (minuteLower.contains("full time") || minuteLower.contains("ft") ||
                     minuteLower.contains("finished")) {
                     log.debug("Match is FINISHED based on minute: {}", minute);
@@ -207,6 +232,52 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
             }
         } catch (Exception e) {
             log.debug("Could not extract minute: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private Integer extractPenaltyHomeScoreFromPage(String pageSource) {
+        try {
+            // Extract penaltyHomeScore from JSON: "penaltyHomeScore":"0"
+            String pattern = "\"penaltyHomeScore\"\\s*:\\s*\"([^\"]+)\"";
+            java.util.regex.Pattern compiledPattern = java.util.regex.Pattern.compile(pattern);
+            java.util.regex.Matcher matcher = compiledPattern.matcher(pageSource);
+
+            if (matcher.find()) {
+                String score = matcher.group(1);
+                if (!score.equals("-") && !score.isEmpty()) {
+                    try {
+                        return Integer.parseInt(score);
+                    } catch (NumberFormatException e) {
+                        log.debug("Penalty home score '{}' is not a number", score);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Error extracting penalty home score: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    private Integer extractPenaltyAwayScoreFromPage(String pageSource) {
+        try {
+            // Extract penaltyAwayScore from JSON: "penaltyAwayScore":"1"
+            String pattern = "\"penaltyAwayScore\"\\s*:\\s*\"([^\"]+)\"";
+            java.util.regex.Pattern compiledPattern = java.util.regex.Pattern.compile(pattern);
+            java.util.regex.Matcher matcher = compiledPattern.matcher(pageSource);
+
+            if (matcher.find()) {
+                String score = matcher.group(1);
+                if (!score.equals("-") && !score.isEmpty()) {
+                    try {
+                        return Integer.parseInt(score);
+                    } catch (NumberFormatException e) {
+                        log.debug("Penalty away score '{}' is not a number", score);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.debug("Error extracting penalty away score: {}", e.getMessage());
         }
         return null;
     }

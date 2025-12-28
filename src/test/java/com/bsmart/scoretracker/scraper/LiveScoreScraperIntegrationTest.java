@@ -133,6 +133,37 @@ class LiveScoreScraperIntegrationTest {
     }
 
     @Test
+    @DisplayName("Scraping LiveScore: Tirs au but (Penalty Shootout)")
+    void testScrapePenaltyShootout() throws IOException {
+        // Charger le HTML fixture
+        String htmlContent = loadFixture("fixtures/livescore-penalty-shootout.html");
+
+        // Mock WebDriver behavior
+        when(webDriver.getPageSource()).thenReturn(htmlContent);
+        when(webDriver.findElement(By.tagName("body"))).thenReturn(bodyElement);
+
+        // Execute scraping
+        MatchSnapshot result = scraper.fetch("https://livescore.com/test");
+
+        // Assertions
+        assertTrue(result.isFound());
+        assertEquals("LIVE", result.getStatus(), "Status should be LIVE during penalty shootout");
+        assertEquals(1, result.getHome(), "Regular time home score");
+        assertEquals(1, result.getAway(), "Regular time away score");
+        assertEquals("Pen", result.getMinute(), "Minute should show 'Pen'");
+
+        // Verify penalty scores are extracted
+        assertNotNull(result.getPenaltyHome(), "Penalty home score should be extracted");
+        assertNotNull(result.getPenaltyAway(), "Penalty away score should be extracted");
+        assertEquals(0, result.getPenaltyHome(), "Penalty home score should be 0");
+        assertEquals(1, result.getPenaltyAway(), "Penalty away score should be 1");
+
+        // Verify WebDriver was called
+        verify(webDriver).get("https://livescore.com/test");
+        verify(webDriver, atLeastOnce()).getPageSource();
+    }
+
+    @Test
     @DisplayName("Scraping LiveScore: Erreur réseau")
     void testScrapeLiveScoreNetworkError() {
         // Simuler une erreur réseau

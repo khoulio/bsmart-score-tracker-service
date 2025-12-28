@@ -81,6 +81,20 @@ class TrackingEngineLogicTest {
     }
 
     @Test
+    @DisplayName("LiveScore: 'ET' → IN_PLAY")
+    void testNormalizeLiveScoreExtraTimeStatus() {
+        MatchStatus result = trackingEngine.normalizeStatus("ET", ProviderType.LIVE_SCORE);
+        assertEquals(MatchStatus.IN_PLAY, result);
+    }
+
+    @Test
+    @DisplayName("LiveScore: 'AET' → FINISHED")
+    void testNormalizeLiveScoreAfterExtraTimeStatus() {
+        MatchStatus result = trackingEngine.normalizeStatus("AET", ProviderType.LIVE_SCORE);
+        assertEquals(MatchStatus.FINISHED, result);
+    }
+
+    @Test
     @DisplayName("Status null → SCHEDULED")
     void testNormalizeNullStatus() {
         MatchStatus result = trackingEngine.normalizeStatus(null, ProviderType.ONE_FOOTBALL);

@@ -92,6 +92,8 @@ public class LiveScoreJsoupProvider implements MatchScraperProvider {
             String rawStatus;
             if ("Half Time".equals(statusText)) {
                 rawStatus = "PAUSED";
+            } else if (statusText.contains("Pen") || statusText.equals("Pen")) {
+                rawStatus = "IN_PLAY";
             } else if ("Full Time".equals(statusText) || "FT".equals(statusText)) {
                 rawStatus = "FINISHED";
             } else if (statusText.contains("'")) {
@@ -100,12 +102,16 @@ public class LiveScoreJsoupProvider implements MatchScraperProvider {
                 rawStatus = statusText;
             }
 
+            // Note: Jsoup provider cannot extract penalty scores from HTML
+            // Only the Selenium provider can extract them from __NEXT_DATA__ JSON
             return MatchSnapshot.builder()
                 .found(true)
                 .home(homeScore)
                 .away(awayScore)
                 .rawStatus(rawStatus)
                 .minute(minute)
+                .penaltyHome(null)
+                .penaltyAway(null)
                 .build();
 
         } catch (IOException e) {

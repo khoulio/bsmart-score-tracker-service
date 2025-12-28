@@ -17,4 +17,6 @@ public class MatchSnapshot {
     private String minute;       // Match minute
     private String rawStatus;    // Additional status info
     private boolean found;       // Was match data found
+    private Integer penaltyHome; // Penalty shootout home score
+    private Integer penaltyAway; // Penalty shootout away score
 }
