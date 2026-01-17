@@ -400,6 +400,9 @@ public class TrackingEngineServiceImpl implements TrackingEngineService {
         if (status.contains("AET") || status.contains("AFTER EXTRA TIME")) {
             return MatchStatus.FINISHED;
         }
+        if (status.contains("AP") || status.contains("AFTER PENALTIES")) {
+            return MatchStatus.FINISHED;
+        }
         if (status.contains("EXTRA TIME") || status.matches(".*\\bET\\b.*")) {
             return MatchStatus.IN_PLAY;
         }

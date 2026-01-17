@@ -96,15 +96,28 @@ public class MatchServiceImpl implements MatchService {
     public MatchDTO createOrUpdateMatchFromWecanprono(com.bsmart.scoretracker.dto.external.WecanpronoMatchDTO dto) {
         log.info("Received request to create or update match from Wecanprono with URL: {}", dto.getMatchUrl());
 
-        Match match = matchRepository.findByExternalId(dto.getExternalId())
-                .orElseGet(Match::new);
+        Match match;
+        if (dto.getExternalId() != null) {
+            match = matchRepository.findByExternalId(dto.getExternalId())
+                    .orElse(null);
+        } else {
+            match = null;
+        }
+        if (match == null && dto.getMatchUrl() != null) {
+            match = matchRepository.findByMatchUrl(dto.getMatchUrl()).orElse(null);
+        }
+        if (match == null) {
+            match = new Match();
+        }
 
         if (match.getId() == null) {
-            log.info("No existing match found for URL '{}'. Creating a new match.", dto.getMatchUrl());
+            log.info("No existing match found for externalId={} url='{}'. Creating a new match.",
+                    dto.getExternalId(), dto.getMatchUrl());
             match.setStatus(MatchStatus.SCHEDULED);
             match.setTrackingEnabled(true); // Default to tracked
         } else {
-            log.info("Found existing match with ID {} for URL '{}'. Updating match.", match.getId(), dto.getMatchUrl());
+            log.info("Found existing match with ID {} for externalId={} url='{}'. Updating match.",
+                    match.getId(), dto.getExternalId(), dto.getMatchUrl());
         }
 
         match.setHomeTeam(dto.getHomeTeam());
@@ -112,29 +125,36 @@ public class MatchServiceImpl implements MatchService {
         if (dto.getStartTime() != null) {
             match.setKickoffUtc(java.time.Instant.ofEpochMilli(dto.getStartTime().getTime()).atZone(java.time.ZoneId.systemDefault()).toLocalDateTime());
         }
-        match.setProvider(dto.getProvider());
-        match.setMatchUrl(dto.getMatchUrl());
+        String matchUrl = dto.getMatchUrl();
+        match.setMatchUrl(matchUrl);
+        if (matchUrl != null) {
+            String lowerUrl = matchUrl.toLowerCase();
+            if (lowerUrl.contains("livescore")) {
+                match.setProvider(com.bsmart.scoretracker.model.enums.ProviderType.LIVE_SCORE);
+            } else if (lowerUrl.contains("onefootball")) {
+                match.setProvider(com.bsmart.scoretracker.model.enums.ProviderType.ONE_FOOTBALL);
+            }
+        }
         match.setExternalId(dto.getExternalId());
 
-        // Note: WecanpronoMatchDTO does not provide a phaseId.
-        // This will cause issues if a new match is created, as phase is a required relationship.
-        // A proper solution would involve Wecanprono providing a phase/competition identifier,
-        // or having a lookup mechanism here. For now, creating a match this way might fail if phase is not nullable.
-        // Based on Match.java, phase is nullable=false. This will fail.
-        // As a temporary workaround, we can't create a match without a phase. Let's only support update.
-        // Re-evaluating: the request is to CREATE or update. A null phase will fail.
-        // I will throw an exception if the match doesn't exist, and log a clear message.
-        // This is safer than creating invalid data.
         if (match.getId() == null) {
-             // Let's try to find a generic phase to assign the match to if it exists, otherwise throw an error
-            Phase defaultPhase = phaseRepository.findById(1L) // Assuming a generic phase with ID 1 exists
-                    .orElseThrow(() -> new IllegalStateException("Cannot create a new match from Wecanprono without a valid Phase. No default phase found."));
-            match.setPhase(defaultPhase);
+            Phase phase = phaseRepository.findAll().stream()
+                    .findFirst()
+                    .orElseThrow(() -> new IllegalStateException("Cannot create match: no Phase exists."));
+            match.setPhase(phase);
+            log.info("Attached new match externalId={} to phase id={} name={} (fallback)",
+                    match.getExternalId(), phase.getId(), phase.getName());
+        } else {
+            log.info("Updating match id={} externalId={} with provider={} url={}",
+                    match.getId(), match.getExternalId(), match.getProvider(), match.getMatchUrl());
         }
 
 
         Match savedMatch = matchRepository.save(match);
-        log.info("Successfully saved match {} for URL '{}'", savedMatch.getId(), savedMatch.getMatchUrl());
+        log.info("Saved match id={} externalId={} phaseId={} provider={}",
+                savedMatch.getId(), savedMatch.getExternalId(),
+                savedMatch.getPhase() != null ? savedMatch.getPhase().getId() : null,
+                savedMatch.getProvider());
 
         return toDTO(savedMatch);
     }
@@ -142,8 +162,44 @@ public class MatchServiceImpl implements MatchService {
     @Override
     @Transactional
     public MatchDTO updateMatch(Long id, MatchDTO dto) {
-        Match match = matchRepository.findById(id)
-            .orElseThrow(() -> new ResourceNotFoundException("Match", id));
+        Match match = matchRepository.findById(id).orElse(null);
+
+        if (match == null) {
+            Phase phase;
+            if (dto.getPhaseId() != null) {
+                phase = phaseRepository.findById(dto.getPhaseId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Phase", dto.getPhaseId()));
+            } else {
+                phase = phaseRepository.findAll().stream()
+                        .findFirst()
+                        .orElseThrow(() -> new IllegalStateException("Cannot create match: no Phase exists."));
+            }
+
+            String matchUrl = dto.getMatchUrl();
+            Match created = Match.builder()
+                    .phase(phase)
+                    .externalId(dto.getExternalId())
+                    .homeTeam(dto.getHomeTeam())
+                    .awayTeam(dto.getAwayTeam())
+                    .kickoffUtc(dto.getKickoffUtc())
+                    .matchUrl(matchUrl)
+                    .trackingEnabled(dto.getTrackingEnabled() != null ? dto.getTrackingEnabled() : true)
+                    .status(MatchStatus.SCHEDULED)
+                    .build();
+
+            if (matchUrl != null) {
+                String lowerUrl = matchUrl.toLowerCase();
+                if (lowerUrl.contains("livescore")) {
+                    created.setProvider(com.bsmart.scoretracker.model.enums.ProviderType.LIVE_SCORE);
+                } else if (lowerUrl.contains("onefootball")) {
+                    created.setProvider(com.bsmart.scoretracker.model.enums.ProviderType.ONE_FOOTBALL);
+                }
+            }
+
+            Match saved = matchRepository.save(created);
+            log.info("Created match {} via update (upsert)", saved.getId());
+            return toDTO(saved);
+        }
 
         if (dto.getPhaseId() != null && !dto.getPhaseId().equals(match.getPhase().getId())) {
             Phase phase = phaseRepository.findById(dto.getPhaseId())
@@ -157,8 +213,16 @@ public class MatchServiceImpl implements MatchService {
         match.setHomeTeam(dto.getHomeTeam());
         match.setAwayTeam(dto.getAwayTeam());
         match.setKickoffUtc(dto.getKickoffUtc());
-        match.setProvider(dto.getProvider());
-        match.setMatchUrl(dto.getMatchUrl());
+        String matchUrl = dto.getMatchUrl();
+        match.setMatchUrl(matchUrl);
+        if (matchUrl != null) {
+            String lowerUrl = matchUrl.toLowerCase();
+            if (lowerUrl.contains("livescore")) {
+                match.setProvider(com.bsmart.scoretracker.model.enums.ProviderType.LIVE_SCORE);
+            } else if (lowerUrl.contains("onefootball")) {
+                match.setProvider(com.bsmart.scoretracker.model.enums.ProviderType.ONE_FOOTBALL);
+            }
+        }
         match.setTrackingEnabled(dto.getTrackingEnabled());
 
         Match updated = matchRepository.save(match);

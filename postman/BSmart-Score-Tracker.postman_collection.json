@@ -168,6 +168,25 @@
 					}
 				},
 				{
+					"name": "Get Matches for Phase",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/phases/:id/matches",
+							"host": ["{{base_url}}"],
+							"path": ["api", "phases", ":id", "matches"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Phase ID"
+								}
+							]
+						}
+					}
+				},
+				{
 					"name": "Create Phase",
 					"request": {
 						"method": "POST",
@@ -591,12 +610,860 @@
 				}
 			],
 			"description": "Synchronization with Wecanprono service for phases and matches"
+		},
+		{
+			"name": "7. Admin - Root & Dashboard",
+			"item": [
+				{
+					"name": "Root Redirect",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/",
+							"host": ["{{base_url}}"],
+							"path": []
+						}
+					}
+				},
+				{
+					"name": "Admin Dashboard",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "dashboard"]
+						}
+					}
+				},
+				{
+					"name": "Admin Root",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/",
+							"host": ["{{base_url}}"],
+							"path": ["admin"]
+						}
+					}
+				}
+			],
+			"description": "Admin dashboard and root redirects"
+		},
+		{
+			"name": "8. Admin - Competitions",
+			"item": [
+				{
+					"name": "List Competitions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/competitions",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "competitions"]
+						}
+					}
+				},
+				{
+					"name": "Competition Create Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/competitions/create",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "competitions", "create"]
+						}
+					}
+				},
+				{
+					"name": "Create Competition (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Ligue 1"
+								},
+								{
+									"key": "country",
+									"value": "France"
+								},
+								{
+									"key": "season",
+									"value": "2024/2025"
+								},
+								{
+									"key": "logoUrl",
+									"value": "https://example.com/logo.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/competitions/create",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "competitions", "create"]
+						}
+					}
+				},
+				{
+					"name": "Competition Edit Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/competitions/:id/edit",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "competitions", ":id", "edit"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Competition (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Ligue 1 Updated"
+								},
+								{
+									"key": "country",
+									"value": "France"
+								},
+								{
+									"key": "season",
+									"value": "2024/2025"
+								},
+								{
+									"key": "logoUrl",
+									"value": "https://example.com/logo-new.png"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/competitions/:id/edit",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "competitions", ":id", "edit"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Competition (Form)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/competitions/:id/delete",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "competitions", ":id", "delete"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "Admin HTML endpoints for competition management"
+		},
+		{
+			"name": "9. Admin - Phases",
+			"item": [
+				{
+					"name": "List Phases",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/phases",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases"]
+						}
+					}
+				},
+				{
+					"name": "List Phases by Competition",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/phases?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Phase Create Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/phases/create?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases", "create"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Phase (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Group Stage"
+								},
+								{
+									"key": "startDate",
+									"value": "2024-09-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-20"
+								},
+								{
+									"key": "trackingEnabled",
+									"value": "true"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/phases/create?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases", "create"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Phase Edit Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/phases/:id/edit?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases", ":id", "edit"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Phase (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "name",
+									"value": "Group Stage Updated"
+								},
+								{
+									"key": "startDate",
+									"value": "2024-09-01"
+								},
+								{
+									"key": "endDate",
+									"value": "2024-12-31"
+								},
+								{
+									"key": "trackingEnabled",
+									"value": "false"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/phases/:id/edit?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases", ":id", "edit"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Phase (Form)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/phases/:id/delete?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases", ":id", "delete"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Toggle Phase Tracking (Form)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/phases/:id/toggle-tracking?competitionId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "phases", ":id", "toggle-tracking"],
+							"query": [
+								{
+									"key": "competitionId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "Admin HTML endpoints for phase management"
+		},
+		{
+			"name": "10. Admin - Matches",
+			"item": [
+				{
+					"name": "List Matches",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches"]
+						}
+					}
+				},
+				{
+					"name": "List Matches by Phase",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "List Matches by Status",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches?status=IN_PLAY",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches"],
+							"query": [
+								{
+									"key": "status",
+									"value": "IN_PLAY"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Match Create Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/create?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", "create"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Create Match (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "homeTeam",
+									"value": "PSG"
+								},
+								{
+									"key": "awayTeam",
+									"value": "Marseille"
+								},
+								{
+									"key": "kickoffUtc",
+									"value": "2024-12-26T20:00:00Z"
+								},
+								{
+									"key": "venue",
+									"value": "Parc des Princes"
+								},
+								{
+									"key": "provider",
+									"value": "ONE_FOOTBALL"
+								},
+								{
+									"key": "matchUrl",
+									"value": "https://onefootball.com/match/123456"
+								},
+								{
+									"key": "trackingEnabled",
+									"value": "false"
+								},
+								{
+									"key": "status",
+									"value": "SCHEDULED"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/matches/create?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", "create"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Match Edit Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/edit?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "edit"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Update Match (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "homeTeam",
+									"value": "PSG"
+								},
+								{
+									"key": "awayTeam",
+									"value": "Marseille"
+								},
+								{
+									"key": "kickoffUtc",
+									"value": "2024-12-26T21:00:00Z"
+								},
+								{
+									"key": "venue",
+									"value": "Parc des Princes"
+								},
+								{
+									"key": "provider",
+									"value": "ONE_FOOTBALL"
+								},
+								{
+									"key": "matchUrl",
+									"value": "https://onefootball.com/match/123456"
+								},
+								{
+									"key": "trackingEnabled",
+									"value": "true"
+								},
+								{
+									"key": "status",
+									"value": "IN_PLAY"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/edit?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "edit"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Match Detail",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Match Manual Update Form",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/manual-update",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "manual-update"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Match Manual Update (Form)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/x-www-form-urlencoded"
+							}
+						],
+						"body": {
+							"mode": "urlencoded",
+							"urlencoded": [
+								{
+									"key": "scoreHome",
+									"value": "1"
+								},
+								{
+									"key": "scoreAway",
+									"value": "0"
+								},
+								{
+									"key": "status",
+									"value": "IN_PLAY"
+								},
+								{
+									"key": "scoreHomeTAB",
+									"value": "0"
+								},
+								{
+									"key": "scoreAwayTAB",
+									"value": "0"
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/manual-update",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "manual-update"],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Delete Match (Form)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/delete?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "delete"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Cleanup Finished Matches",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/cleanup-finished",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", "cleanup-finished"]
+						}
+					}
+				},
+				{
+					"name": "Toggle Match Tracking (Form)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/toggle-tracking?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "toggle-tracking"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Manual Refresh Match (Form)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/:id/refresh?phaseId=1",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", ":id", "refresh"],
+							"query": [
+								{
+									"key": "phaseId",
+									"value": "1"
+								}
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1"
+								}
+							]
+						}
+					}
+				},
+				{
+					"name": "Extract Metadata (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/matches/extract-metadata?url=https://onefootball.com/match/12345",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "matches", "extract-metadata"],
+							"query": [
+								{
+									"key": "url",
+									"value": "https://onefootball.com/match/12345"
+								}
+							]
+						}
+					}
+				}
+			],
+			"description": "Admin HTML endpoints for match management"
+		},
+		{
+			"name": "11. Admin - Sync",
+			"item": [
+				{
+					"name": "Sync Competitions Page",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/sync/competitions",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "sync", "competitions"]
+						}
+					}
+				},
+				{
+					"name": "Sync All Competitions (Admin)",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/admin/sync/competitions/sync-all",
+							"host": ["{{base_url}}"],
+							"path": ["admin", "sync", "competitions", "sync-all"]
+						}
+					}
+				}
+			],
+			"description": "Admin HTML endpoints for sync pages"
 		}
 	],
 	"variable": [
 		{
 			"key": "base_url",
-			"value": "http://localhost:9093",
+			"value": "http://localhost:8222/bsmart-score-tracker-service",
 			"type": "string"
 		}
 	]

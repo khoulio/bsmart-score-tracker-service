@@ -5,8 +5,9 @@ Cette collection Postman contient tous les endpoints de l'API BSmart Score Track
 ## 📁 Fichiers
 
 - `BSmart-Score-Tracker.postman_collection.json` - Collection complète avec tous les endpoints
-- `LOCAL.postman_environment.json` - Environnement LOCAL (http://localhost:9093)
-- `PROD.postman_environment.json` - Environnement PROD (http://85.215.131.40:8222)
+- `LOCAL.postman_environment.json` - Environnement LOCAL (API Gateway)
+- `LOCAL-GATEWAY.postman_environment.json` - Environnement LOCAL-GATEWAY (API Gateway)
+- `PROD.postman_environment.json` - Environnement PROD (API Gateway)
 
 ## 🚀 Import dans Postman
 
@@ -20,18 +21,18 @@ Cette collection Postman contient tous les endpoints de l'API BSmart Score Track
 ### 2. Importer les Environnements
 
 1. Cliquer sur **Import**
-2. Sélectionner `LOCAL.postman_environment.json` et `PROD.postman_environment.json`
+2. Sélectionner `LOCAL.postman_environment.json`, `LOCAL-GATEWAY.postman_environment.json` et `PROD.postman_environment.json`
 3. Cliquer sur **Import**
 
 ### 3. Sélectionner un Environnement
 
 1. Dans le coin supérieur droit de Postman
 2. Cliquer sur le menu déroulant des environnements
-3. Sélectionner **LOCAL - Score Tracker** ou **PROD - Score Tracker**
+3. Sélectionner **LOCAL - Score Tracker**, **LOCAL-GATEWAY - Score Tracker** ou **PROD - Score Tracker**
 
 ## 📋 Organisation de la Collection
 
-La collection est organisée en **6 catégories** :
+La collection est organisée en **11 catégories** :
 
 ### 1. **Competitions** (5 endpoints)
 - ✅ GET - Récupérer toutes les compétitions
@@ -40,10 +41,11 @@ La collection est organisée en **6 catégories** :
 - ✅ PUT - Mettre à jour une compétition
 - ✅ DELETE - Supprimer une compétition
 
-### 2. **Phases** (6 endpoints)
+### 2. **Phases** (7 endpoints)
 - ✅ GET - Récupérer toutes les phases
 - ✅ GET - Récupérer les phases par compétition
 - ✅ GET - Récupérer une phase par ID
+- ✅ GET - Récupérer les matches d'une phase
 - ✅ POST - Créer une phase
 - ✅ PUT - Mettre à jour une phase
 - ✅ DELETE - Supprimer une phase
@@ -74,21 +76,71 @@ La collection est organisée en **6 catégories** :
 ### 6. **Sync - Phases & Matches** (1 endpoint)
 - ✅ POST - Synchroniser toutes les phases et matches
 
+### 7. **Admin - Root & Dashboard** (3 endpoints)
+- ✅ GET - Root redirect
+- ✅ GET - Dashboard admin
+- ✅ GET - Admin root
+
+### 8. **Admin - Competitions** (6 endpoints)
+- ✅ GET - Liste des compétitions
+- ✅ GET - Formulaire de création
+- ✅ POST - Création (formulaire)
+- ✅ GET - Formulaire d'édition
+- ✅ POST - Mise à jour (formulaire)
+- ✅ POST - Suppression (formulaire)
+
+### 9. **Admin - Phases** (8 endpoints)
+- ✅ GET - Liste des phases
+- ✅ GET - Liste par compétition
+- ✅ GET - Formulaire de création
+- ✅ POST - Création (formulaire)
+- ✅ GET - Formulaire d'édition
+- ✅ POST - Mise à jour (formulaire)
+- ✅ POST - Suppression (formulaire)
+- ✅ POST - Toggle tracking (formulaire)
+
+### 10. **Admin - Matches** (15 endpoints)
+- ✅ GET - Liste des matches
+- ✅ GET - Liste par phase
+- ✅ GET - Liste par statut
+- ✅ GET - Formulaire de création
+- ✅ POST - Création (formulaire)
+- ✅ GET - Formulaire d'édition
+- ✅ POST - Mise à jour (formulaire)
+- ✅ GET - Détail du match
+- ✅ GET - Formulaire mise à jour manuelle
+- ✅ POST - Mise à jour manuelle (formulaire)
+- ✅ POST - Suppression (formulaire)
+- ✅ POST - Nettoyage des matches terminés
+- ✅ POST - Toggle tracking (formulaire)
+- ✅ POST - Rafraîchir un match (formulaire)
+- ✅ POST - Extraire les métadonnées (admin)
+
+### 11. **Admin - Sync** (2 endpoints)
+- ✅ GET - Page de synchronisation
+- ✅ POST - Synchroniser toutes les compétitions (admin)
+
 ## 🔧 Configuration des Environnements
 
 ### LOCAL
 ```
-base_url: http://localhost:9093
+base_url: http://localhost:8222/bsmart-score-tracker-service
 environment: local
+```
+
+### LOCAL-GATEWAY
+```
+base_url: http://localhost:8222/bsmart-score-tracker-service
+environment: local-gateway
 ```
 
 ### PROD
 ```
-base_url: http://85.215.131.40:8222/bsmart-score-tracker-service
+base_url: http://localhost:8222/bsmart-score-tracker-service
 environment: production
 ```
 
-**Note**: En production, l'API est accessible via l'API Gateway sur le port 8222.
+**Note**: Les environnements utilisent l'API Gateway sur le port 8222.
 
 ## 📝 Exemples d'utilisation
 

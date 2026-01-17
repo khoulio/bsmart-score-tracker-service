@@ -9,6 +9,7 @@ import com.bsmart.scoretracker.service.MatchService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +18,7 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
+@Slf4j
 @RequestMapping("/api/matches")
 @RequiredArgsConstructor
 @Tag(name = "Matches", description = "Match management and tracking API")
@@ -65,6 +67,8 @@ public class MatchController {
             description = "Allows Wecanprono to create or update a match using its own data structure. " +
                           "The match is identified by the provider URL for updates.")
     public ResponseEntity<MatchDTO> createOrUpdateMatchFromWecanprono(@Valid @RequestBody WecanpronoMatchDTO dto) {
+        log.info("Wecanprono upsert: externalId={} url={} provider={}",
+                dto.getExternalId(), dto.getMatchUrl(), dto.getProvider());
         return ResponseEntity.ok(matchService.createOrUpdateMatchFromWecanprono(dto));
     }
 

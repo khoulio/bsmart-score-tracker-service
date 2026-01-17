@@ -305,15 +305,27 @@ class MatchServiceImplTest {
     }
 
     @Test
-    void testUpdateMatch_NotFound() {
+    void testUpdateMatch_NotFound_CreatesMatch() {
         // Given
-        MatchDTO dto = MatchDTO.builder().build();
+        MatchDTO dto = MatchDTO.builder()
+            .homeTeam("PSG")
+            .awayTeam("Lyon")
+            .matchUrl("https://onefootball.com/match/1")
+            .trackingEnabled(true)
+            .build();
         when(matchRepository.findById(999L)).thenReturn(Optional.empty());
+        when(phaseRepository.findAll()).thenReturn(List.of(phase));
+        Match saved = Match.builder().id(10L).phase(phase).build();
+        when(matchRepository.save(any(Match.class))).thenReturn(saved);
 
-        // When & Then
-        assertThrows(ResourceNotFoundException.class, () -> matchService.updateMatch(999L, dto));
+        // When
+        MatchDTO result = matchService.updateMatch(999L, dto);
+
+        // Then
+        assertEquals(10L, result.getId());
         verify(matchRepository).findById(999L);
-        verify(matchRepository, never()).save(any());
+        verify(phaseRepository).findAll();
+        verify(matchRepository).save(any(Match.class));
     }
 
     @Test

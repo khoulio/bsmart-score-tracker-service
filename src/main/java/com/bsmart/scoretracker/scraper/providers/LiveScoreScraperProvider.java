@@ -116,6 +116,11 @@ public class LiveScoreScraperProvider implements MatchScraperProvider {
                     return "FT";
                 }
 
+                if (minuteLower.equals("ap") || minuteLower.contains("after penalties")) {
+                    log.debug("Match is FINISHED (after penalties) based on minute: {}", minute);
+                    return "FT";
+                }
+
                 if (minuteLower.equals("et") || minuteLower.contains("extra time")) {
                     log.debug("Match is IN EXTRA TIME (still LIVE) based on minute: {}", minute);
                     return "LIVE";
